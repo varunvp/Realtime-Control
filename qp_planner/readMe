@@ -1,0 +1,143 @@
+
+###############################################################################
+								MSG FILE
+################################################################################
+Header header
+string algo
+string command
+string speed 
+int8 abs_speed
+int8 precedence
+geometry_msgs/Twist cmd_custom   #if custom velocities is needed
+
+
+###############################################################################
+								Command line Rostopic PUB
+################################################################################
+
+rostopic pub -r 10 algo/roadfollowing px4_planner/algomsg "header:
+  seq: 0
+  stamp: {secs: 0, nsecs: 0}
+  frame_id: '2'
+algo: 'RoadFollowing'
+command: 'up'
+speed: 'abs'
+abs_speed: 2
+precedence: 1
+cmd_custom:
+  linear: {x: 0.0, y: 0.0, z: 0.0}
+  angular: {x: 0.0, y: 0.0, z: 0.0}" 
+
+  ------------------------------------------------------------------------------
+
+
+  rostopic pub -r 10 algo/roadfollowing px4_planner/algomsg "header:
+    seq: 0
+    stamp: {secs: 0, nsecs: 0}
+    frame_id: '2'
+  algo: 'RoadFollowing'
+  command: 'custom'
+  speed: 'abs'
+  abs_speed: 0
+  precedence: 1
+  cmd_custom:
+    linear: {x: 0.0, y: 0.0, z: 0.0}
+    angular: {x: 0.0, y: 5.0, z: 0.0}" 
+
+
+################################################################################
+								Commands and values
+################################################################################
+
+algo[string]: Name of algo
+
+command[string]:list of commands always in lowercase
+		forward
+		backward
+		left 
+		right
+		up
+		down
+		turn_right
+		turn_left
+		offboard #### to start offboard mode
+		takeoff
+		land
+		arm
+		kill
+		hover
+		disarm
+		custom ### if custom velocities is needed
+
+speed[string]: list of speeds always in lowercase
+			low
+			medium
+			high
+			abs ####### if abs_speed is needed
+
+						
+abs_speed[int8]: speed should be set to abs any integer value 
+
+precedence[int8]: Any integer value to set priority
+
+###################################################################################	
+									Subscriber node 
+###################################################################################
+
+from px4_planner.msg import algomsg
+
+self.sub_algo1 = rospy.Subscriber("/algo/roadfollowing", algomsg, self.cmd_call)
+
+def cmd_call(self, data):
+	algo = data.algo
+	cmd = data.command
+	speed = data.speed
+	abs_speed = data.abs_speed
+	precedence = data.precedence
+	cmd_custom = data.cmd_custom
+	print(algo)
+	print(cmd )
+	print(speed )
+	print(abs_speed)
+	print(precedence)
+
+###################################################################################
+									Publisher node		
+###################################################################################
+
+pub = rospy.Publisher('/algo/roadfollowing', algomsg, queue_size=10)
+
+pub.publish(algomsg('Road_following', 'forward', 'low', 0, 1))
+
+def compact_algomsg(command, speed)
+	algomsg('Road-Following', command, speed, 0, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+def algomsg(algo, command, speed, abs_speed,precedence,x,y,z,a,b,c)
+	cmd = algomsg(header=Header(stamp=rospy.get_rostime()))
+	cmd.algo = algo
+	cmd.command = command
+	cmd.speed = speed
+	cmd.abs_speed = abs_speed
+	cmd.precedence = precedence
+	cmd.cmd_custom = twist_obj(x,y,z,a,b,c)
+	return cmd
+
+def twist_obj(x,y,z,a,b,c):
+	move_cmd=Twist()
+	move_cmd.linear.x=x
+	move_cmd.linear.y=y
+	move_cmd.linear.z=z
+	move_cmd.angular.x=a
+	move_cmd.angular.y=b
+	move_cmd.angular.z=c
+	return move_cmd
+
+######################################################################################
+								Sample Codes
+######################################################################################
+planner.py ###### Main algorithm and subscriber
+px4_control ####### Old keyboard control
+pub_algo_msg.py ###### Sample 
+
+#######################################################################################
+

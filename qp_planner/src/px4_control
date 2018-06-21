@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+# vim:set ts=4 sw=4 et:
+#
+# Copyright 2014 Vladimir Ermakov.
+#
+# This file is part of the mavros package and subject to the license terms
+# in the top-level LICENSE file of the mavros repository.
+# https://github.com/mavlink/mavros/tree/master/LICENSE.md
+
+from __future__ import print_function
+
+import os, sys, select, termios, tty
+import roslib, rospy
+import argparse
+import rospy
+import mavros
+
+from tf.transformations import quaternion_from_euler
+from sensor_msgs.msg import Joy
+from std_msgs.msg import Header, Float64, Empty
+from geometry_msgs.msg import PoseStamped, TwistStamped, Vector3, Quaternion, Point, Twist
+from subprocess import call
+from mavros_msgs.msg import OverrideRCIn
+from mavros import command
+from mavros import setpoint as SP
+from mavros_msgs.srv import CommandBool
+from mavros_msgs.srv import CommandTOL
+from mavros_msgs.srv import SetMode
+
+
+
+def arm(args, state):
+    try:
+        arming_cl = rospy.ServiceProxy(args.mavros_ns + "/cmd/arming", CommandBool)
+        ret = arming_cl(value=state)
+    except rospy.ServiceException as ex:
+        fault(ex)
+
+    
+
+def takeoff(args):
+    try:
+        takeoff_cl = rospy.ServiceProxy(args.mavros_ns + "/cmd/takeoff", CommandTOL)
+        
+        ret = takeoff_cl(altitude=2, latitude=0, longitude=0, min_pitch=0, yaw=0)
+    except rospy.ServiceException as ex:
+        fault(ex)
+
+   
+
+def land(args):
+    try:
+        land_cl = rospy.ServiceProxy(args.mavros_ns + "/cmd/land", CommandTOL)
+        
+        ret = land_cl(altitude=0, latitude=0, longitude=0, min_pitch=0, yaw=0)
+    except rospy.ServiceException as ex:
+        fault(ex)
+
+def fault(args):
+	rospy.loginfo("exception detected")
+	rospy.loginfo(args)
+
+
+# class px4_control:
+# 	def __init__(self):
+
+			
+			# orig_settings = termios.tcgetattr(sys.stdin)
+
+			# tty.setraw(sys.stdin)
+
+			
+			
+
+def velocity_call(args):
+	
+	rospy.loginfo("MAV-Teleop: Velocity setpoint control type.")
+
+	mode = rospy.ServiceProxy("mavros/set_mode", SetMode)
+	
+	pub = SP.get_pub_velocity_cmd_vel(queue_size=10)
+	while 1:
+		x = sys.stdin.read(1)[0]
+		pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+
+		if (x == chr(27)):
+
+			termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.orig_settings)
+
+		horVel = 5
+		rotVel = 1.0
+		verVel = 5
+		
+		print(x)
+		pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+		if (x == 'a'):
+			pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, -1*rotVel))
+		elif (x == 'd'):
+			pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, 1*rotVel))
+		elif (x == 'w'):
+			pub.publish(twist_obj(0.0, 0.0, 1*verVel, 0.0, 0.0, 0.0))
+		elif (x == 's'):
+			pub.publish(twist_obj(0.0, 0.0, -1*verVel, 0.0, 0.0, 0.0))
+		elif (x == 'u'):
+			pub.publish(twist_obj(1*horVel, 1*horVel, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'o'):
+			pub.publish(twist_obj(1*horVel, -1*horVel, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'i'):
+			pub.publish(twist_obj(1*horVel, 0.0, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'k'):
+			pub.publish(twist_obj(-1*horVel, 0.0, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'j'):
+			pub.publish(twist_obj(0.0, 1*horVel, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'l'):
+			pub.publish(twist_obj(0.0, -1*horVel, 0.0, 0.0, 0.0, 0.0))
+		'''elif (x == 't'):
+			pub.publish(twist_obj(0.0,0.0, 0.0,0.0,0.0, 0.0))
+		elif (x == 'g'):
+			pub.publish(twist_obj(0.0,0.0, 0.0, 0.0,1*rotVel, 0.0))'''
+		elif (x == '.'):
+			land(args)
+
+		elif (x == ','):
+			# takeoff(args)
+			resp = mode(0,"AUTO.TAKEOFF")
+			pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+		elif (x == 'm'):
+			arm(args,True)
+			resp = mode(0,"OFFBOARD")
+			# print "setmode send ok %s" % resp.success
+		elif (x == '/'):
+			arm(args, False)
+		else:
+			pub.publish(twist_obj(0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+
+	# rospy.spin()
+
+	
+
+def twist_obj(x,y,z,a,b,c):
+	move_cmd=TwistStamped(header=Header(stamp=rospy.get_rostime()))
+	move_cmd.twist.linear.x=x
+	move_cmd.twist.linear.y=y
+	move_cmd.twist.linear.z=z
+	move_cmd.twist.angular.x=a
+	move_cmd.twist.angular.y=b
+	move_cmd.twist.angular.z=c
+	return move_cmd
+
+def main():
+	# Initialize Node class
+	parser = argparse.ArgumentParser(description="Teleoperation script for Copter-UAV")
+	rospy.init_node('px4_control', anonymous=True)
+	parser.add_argument('-n', '--mavros-ns', help="ROS node namespace", default="/mavros")
+
+	args = parser.parse_args(rospy.myargv(argv=sys.argv)[1:])
+
+	mavros.set_namespace(args.mavros_ns)
+	orig_settings = termios.tcgetattr(sys.stdin)
+	tty.setraw(sys.stdin)
+
+
+	velocity_call(args)
+	# spin the node
+	# try:
+	# # 	rospy.spin()
+	# # # stop the node if Ctrl-C pressed
+	# except KeyboardInterrupt:
+	# 	print("Shutting down")
+	# 	cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+	print("Hello world!")
+main()
