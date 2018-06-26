@@ -68,6 +68,12 @@ def qp_q_dot_des_array(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
     big_b = np.empty((2, 1), np.float)
 
     for i in range(0, n):
+   #  		get_Va_Vb(q_act[i], q_des[i], nsteps, time_horizon)
+
+
+   #  		get_Ba_Bb(q_act[i], q_limit[i], nsteps, time_horizon)
+
+			# get_terminal_constraints(q_act[i],q_des[i],nsteps, time_horizon)
 	    kp = q_kp[i]
 	    Va = q_act[i] - q_des[i]
 	    Vb = -kp * Va * Va

@@ -45,7 +45,7 @@ from qp_matrix import qp_q_dot_des_array
 global R
 global roll, pitch, yaw
 
-
+s = 0
 cont = 0
 home_xy_recorded = home_z_recorded = False
 cart_x = cart_y = cart_z = 0.0
@@ -259,7 +259,7 @@ def plot(vel_y):
 
 def main():
     global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
-    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont
+    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, s
     xAnt = yAnt = 0
     home_xy_recorded = False
     rospy.init_node('MAVROS_Listener')
@@ -268,7 +268,15 @@ def main():
 
     rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
-    rospy.Subscriber("/mavros/global_position/local", Odometry, gps_local_cb)
+    if(s == 0):
+        rospy.Subscriber("/mavros/global_position/local", Odometry, gps_local_cb)
+
+    elif(s == 1):    
+        rospy.Subscriber("/global_position_slow", Odometry, gps_local_cb)
+
+    else:
+        s = 0
+
     rospy.Subscriber("/mavros/altitude", Altitude, alt_cb)
     rospy.Subscriber("/mavros/local_position/pose", PoseStamped, pose_cb)
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
@@ -309,11 +317,14 @@ def main():
             if x == 'z':
                 limit_z = float(raw_input('Enter z limit:'))
 
-            if x == 'k':
+            if x == 'p':
                 kp = float(raw_input('Enter kp limit:'))
 
             if x == 'b':
                 kb = float(raw_input('Enter kb limit:'))
+
+            if x == 's':
+                s = int(raw_input('0 - original, 1 - slow'))
 
             sys.stdin.flush()
 
