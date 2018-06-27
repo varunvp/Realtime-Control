@@ -41,6 +41,7 @@ import numpy
 from numpy import array
 import math
 from qp_matrix import qp_q_dot_des_array
+from MPC import MPC_solver
 
 global R
 global roll, pitch, yaw
@@ -69,59 +70,8 @@ quat.x = quat.y = quat.z = quat.w = 0
 start_y = 0.0
 
 
-def quadprog_solve_qp(H, h, A=None, b=None, C=None, d=None):
-    qp_H = .5 * (H + H.T)  # make sure H is symmetric
-    qp_h = -h
-    if C is not None:
-        qp_C = -numpy.vstack([C, A]).T
-        qp_d = -numpy.hstack([d, b])
-        meq = C.shape[0]
-    else:  # no equality constraint
-        qp_C = -A.T
-        qp_d = -b
-        meq = 0
-
-    # print qp_H
-    # print qp_h
-    # print qp_C
-    # print qp_d
-    return quadprog.solve_qp(qp_H, qp_h, qp_C, qp_d, meq)[0]
-
-
-def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
-    # q_des = 0.
-
-    # cost function matrix is given here   e.g. u^T H u
-    H = array([[1000., 0.], [0., 1.]])
-    h = array([0., 0.])  # cost function vector    e.g. h^T u
-
-    # stability constraints
-    kp = q_kp
-    Va = q_act - q_des
-    Vb = -kp * (q_act - q_des) * (q_act - q_des)
-
-    # # safety constraints
-    limit = q_limit  # in kms for position and radians for angles - very high
-    q_rel = q_act - q_origin
-    Ba = - 2. * q_rel  # derivative of angle_limit - x^2
-    Bb = -q_kb * (limit * limit - q_rel * q_rel)  # - (angle_limit - x^2)
-
-    # inequality constraints are given here Au \leq b
-    A = array([[-1, Va], [0, -Ba]])
-    b = array([Vb, -Bb])
-    # A = array([[-1, Va]])
-    # b = array([Vb])
-    
-    u_in = quadprog_solve_qp(H, h, A, b)
-
-    return array([u_in[1]])
-
-
 def imu_cb(data):
     global roll, pitch, yaw
-    # imu_data.x = data.linear_acceleration.x
-    # imu_data.y = data.linear_acceleration.y
-    # imu_data.z = data.linear_acceleration.z
     orientation_q = data.orientation
     orientation_list = (orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w)
     (roll, pitch, yaw) = euler_from_quaternion(orientation_list)
@@ -332,34 +282,35 @@ def main():
         # desired_yaw = (math.atan2(desired_y - cart_y, desired_x - cart_x) * 180 / 3.1416)
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
-        cart_array = [cart_x, cart_y, cart_z]
-        des_array = [desired_x, desired_y, desired_z]
-        origin_array = [home_x, home_y, home_z]
-        limit_array = [limit_x, limit_y, limit_z]
-        kp_array = [kp, kp, kp]
-        kb_array = [kb, kb, kb]
-        v_des = qp_q_dot_des_array(cart_array, des_array, origin_array, limit_array, kp_array, kb_array)
-        velocity_x_des = v_des[0]
-        velocity_y_des = v_des[1]
-        velocity_z_des = v_des[2]
+        ################################ MPC ###################################
+        velocity_x_des = MPC_solver(cart_x, desired_x, nsteps=10., interval=0.1)
+        velocity_y_des = MPC_solver(cart_y, desired_y, nsteps=10., interval=0.1)
+        velocity_z_des = MPC_solver(cart_z, desired_z, nsteps=10., interval=0.1)
+
+        ############################## QP Array ################################
+        # cart_array = [cart_x, cart_y, cart_z]
+        # des_array = [desired_x, desired_y, desired_z]
+        # origin_array = [home_x, home_y, home_z]
+        # limit_array = [limit_x, limit_y, limit_z]
+        # kp_array = [kp, kp, kp]
+        # kb_array = [kb, kb, kb]
+        # v_des = qp_q_dot_des_array(cart_array, des_array, origin_array, limit_array, kp_array, kb_array)
+        # velocity_x_des = v_des[0]
+        # velocity_y_des = v_des[1]
+        # velocity_z_des = v_des[2]
+
+        ############################## Only QP #################################
         # velocity_x_des = qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb)
         # velocity_y_des = qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb)
         # velocity_z_des = qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb)
-        # velocity_yaw_des = -qp_q_dot_des(yaw, desired_yaw, home_yaw, 36000, 1000, 1000)
-        # print(velocity_y_des)
-        # velocity_x_des = 0
-        # velocity_y_des = 0
-        # velocity_z_des = -10 * (cart_z - desired_z)
-        # velocity_yaw_des = 0
+        # velocity_yaw_des = -qp_q_dot_des(yaw, desired_yaw, home_yaw, 36000, 1000, 1000
 
-        # pub = rospy.Publisher('/algo/roadfollowing', algomsg, queue_size=10)
-        # pub.publish(algomsg1("Road-Following", 'custom', 'medium', 0, 1, velocity_x_des, velocity_y_des, velocity_z_des, 0.0, 0.0, 0.0))
-
-        velocity_x_des = velocity_x_des if math.fabs(velocity_x_des) < 2.5 else 2.5 * math.copysign(1, velocity_x_des)
-        velocity_y_des = velocity_y_des if math.fabs(velocity_y_des) < 2.5 else 2.5 * math.copysign(1, velocity_y_des)
+        # velocity_x_des = velocity_x_des if math.fabs(velocity_x_des) < 2.5 else 2.5 * math.copysign(1, velocity_x_des)
+        # velocity_y_des = velocity_y_des if math.fabs(velocity_y_des) < 2.5 else 2.5 * math.copysign(1, velocity_y_des)
 
         pub1.publish(twist_obj(velocity_x_des, velocity_y_des, velocity_z_des, 0.0, 0.0, 0.0))
-        print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
+        
+        # print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
         # print((cart_x - home_x), (cart_y - home_y), desired_x - home_x, desired_y - home_y)
         # print(desired_x, desired_y)
 
@@ -428,7 +379,6 @@ def main():
 
         pub4.publish(path)
         pub5.publish(ekf_path)
-        # print(pose.pose.position.x, pose.pose.position.y)
 
         if cont > max_append and len(path.poses) != 0 and len(ekf_path.poses):
                 path.poses.pop(0)
@@ -437,7 +387,6 @@ def main():
         br.sendTransform((pos.x, pos.y, pos.z), (quat.x, quat.y, quat.z, quat.w), rospy.Time.now(), "base_link", "local_origin")
         br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "fcu", "local_origin")
        
-
 
 if __name__ == "__main__":
     mavros.set_namespace("/mavros")
