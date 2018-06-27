@@ -46,7 +46,9 @@ from MPC import MPC_solver
 global R
 global roll, pitch, yaw
 
-s = 0
+n = 10
+t = 0.1
+gps_rate = 0
 cont = 0
 home_xy_recorded = home_z_recorded = False
 cart_x = cart_y = cart_z = 0.0
@@ -209,7 +211,7 @@ def plot(vel_y):
 
 def main():
     global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
-    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, s
+    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t
     xAnt = yAnt = 0
     home_xy_recorded = False
     rospy.init_node('MAVROS_Listener')
@@ -218,14 +220,14 @@ def main():
 
     rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
-    if(s == 0):
+    if(gps_rate == 0):
         rospy.Subscriber("/mavros/global_position/local", Odometry, gps_local_cb)
 
-    elif(s == 1):    
+    elif(gps_rate == 1):    
         rospy.Subscriber("/global_position_slow", Odometry, gps_local_cb)
 
     else:
-        s = 0
+        gps_rate = 0
 
     rospy.Subscriber("/mavros/altitude", Altitude, alt_cb)
     rospy.Subscriber("/mavros/local_position/pose", PoseStamped, pose_cb)
@@ -274,7 +276,13 @@ def main():
                 kb = float(raw_input('Enter kb limit:'))
 
             if x == 's':
-                s = int(raw_input('0 - original, 1 - slow'))
+                gps_rate = int(raw_input('0 - original, 1 - slow:'))
+
+            if x == 'n':
+                n = int(raw_input("Enter nsteps:"))
+
+            if x == 't':
+                t = float(raw_input("Enter timestep duration:"))
 
             sys.stdin.flush()
 
@@ -283,9 +291,9 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des = MPC_solver(cart_x, desired_x, nsteps=10., interval=0.1)
-        velocity_y_des = MPC_solver(cart_y, desired_y, nsteps=10., interval=0.1)
-        velocity_z_des = MPC_solver(cart_z, desired_z, nsteps=10., interval=0.1)
+        velocity_x_des = MPC_solver(cart_x, desired_x, n, t)
+        velocity_y_des = MPC_solver(cart_y, desired_y, n, t)
+        velocity_z_des = MPC_solver(cart_z, desired_z, n, t)
 
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
