@@ -26,8 +26,6 @@ def quadprog_solve_qp(H, h, A=None, b=None, C=None, d=None):
 
 
 def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
-    # q_des = 0.
-
     # cost function matrix is given here   e.g. u^T H u
     H = array([[1000., 0.], [0., 1.]])
     h = array([0., 0.])  # cost function vector    e.g. h^T u
@@ -41,7 +39,7 @@ def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
     limit = q_limit  # in kms for position and radians for angles - very high
     q_rel = q_act - q_origin
     Ba = - 2. * q_rel  # derivative of angle_limit - x^2
-    Bb = -q_kb * (limit * limit - q_rel * q_rel)  # - (angle_limit - x^2)
+    Bb = -q_kb * (limit * limit - q_rel * q_rel)  # - (angle_limit^2 - x^2)
 
     # inequality constraints are given here Au \leq b
     A = array([[-1, Va], [0, -Ba]])
@@ -55,8 +53,6 @@ def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
 
 
 def qp_q_dot_des_array(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
-
-
     n = len(q_act)
     H = array([[1000., 0.], [0., 1.]])
     h = array([0., 0.])  # cost function vector    e.g. h^T u

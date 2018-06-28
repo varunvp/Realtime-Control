@@ -42,6 +42,7 @@ from numpy import array
 import math
 from qp_matrix import qp_q_dot_des_array
 from MPC import MPC_solver
+import qp_matrix
 
 global R
 global roll, pitch, yaw
@@ -55,7 +56,7 @@ cart_x = cart_y = cart_z = 0.0
 home_x = home_y = home_z = 0.0
 ekf_x = ekf_y = ekf_z = 0
 desired_x = desired_y =  desired_z = 0.0
-limit_x = limit_y = limit_z = 5.0
+limit_x = limit_y = limit_z = 100.
 roll = pitch = yaw = 0.0
 TIMEOUT = 0.5
 kp = 1.
@@ -70,6 +71,7 @@ quat = Quaternion()
 pos.x = pos.y = pos.z = 0
 quat.x = quat.y = quat.z = quat.w = 0
 start_y = 0.0
+timer = 0.0
 
 
 def imu_cb(data):
@@ -211,7 +213,7 @@ def plot(vel_y):
 
 def main():
     global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
-    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t
+    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer
     xAnt = yAnt = 0
     home_xy_recorded = False
     rospy.init_node('MAVROS_Listener')
@@ -247,6 +249,8 @@ def main():
 
     # rospy.spin()
     while not rospy.is_shutdown():
+        timer = time.time()
+
     	yaw = 360.0 + yaw if yaw < 0 else yaw
 
         if home_z_recorded is False and cart_z != 0 and yaw != 0:
@@ -291,9 +295,9 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des = MPC_solver(cart_x, desired_x, n, t)
-        velocity_y_des = MPC_solver(cart_y, desired_y, n, t)
-        velocity_z_des = MPC_solver(cart_z, desired_z, n, t)
+        velocity_x_des = MPC_solver(cart_x, desired_x, limit_x, home_x)
+        velocity_y_des = MPC_solver(cart_y, desired_y, limit_y, home_y)
+        velocity_z_des = MPC_solver(cart_z, desired_z, limit_z, home_z)
 
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
@@ -308,9 +312,9 @@ def main():
         # velocity_z_des = v_des[2]
 
         ############################## Only QP #################################
-        # velocity_x_des = qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb)
-        # velocity_y_des = qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb)
-        # velocity_z_des = qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb)
+        # velocity_x_des = qp_matrix.qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb)
+        # velocity_y_des = qp_matrix.qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb)
+        # velocity_z_des = qp_matrix.qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb)
         # velocity_yaw_des = -qp_q_dot_des(yaw, desired_yaw, home_yaw, 36000, 1000, 1000
 
         # velocity_x_des = velocity_x_des if math.fabs(velocity_x_des) < 2.5 else 2.5 * math.copysign(1, velocity_x_des)
@@ -318,7 +322,7 @@ def main():
 
         pub1.publish(twist_obj(velocity_x_des, velocity_y_des, velocity_z_des, 0.0, 0.0, 0.0))
         
-        # print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
+        print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
         # print((cart_x - home_x), (cart_y - home_y), desired_x - home_x, desired_y - home_y)
         # print(desired_x, desired_y)
 
@@ -400,5 +404,5 @@ if __name__ == "__main__":
     mavros.set_namespace("/mavros")
     pub1 = SP.get_pub_velocity_cmd_vel(queue_size=3)
     path = Path() 
-
+    numpy.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
     main()
