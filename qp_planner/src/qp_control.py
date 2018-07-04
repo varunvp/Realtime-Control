@@ -56,7 +56,7 @@ cart_x = cart_y = cart_z = 0.0
 home_x = home_y = home_z = 0.0
 ekf_x = ekf_y = ekf_z = 0
 desired_x = desired_y =  desired_z = 0.0
-limit_x = limit_y = limit_z = 100.
+limit_x = limit_y = limit_z = 10.
 roll = pitch = yaw = 0.0
 TIMEOUT = 0.5
 kp = 1.
@@ -295,9 +295,9 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des = MPC_solver(cart_x, desired_x, limit_x, home_x)
-        velocity_y_des = MPC_solver(cart_y, desired_y, limit_y, home_y)
-        velocity_z_des = MPC_solver(cart_z, desired_z, limit_z, home_z)
+        velocity_x_des = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t)
+        velocity_y_des = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t)
+        velocity_z_des = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t)
 
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
@@ -322,7 +322,7 @@ def main():
 
         pub1.publish(twist_obj(velocity_x_des, velocity_y_des, velocity_z_des, 0.0, 0.0, 0.0))
         
-        print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
+        # print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
         # print((cart_x - home_x), (cart_y - home_y), desired_x - home_x, desired_y - home_y)
         # print(desired_x, desired_y)
 
