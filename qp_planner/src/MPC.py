@@ -9,9 +9,10 @@ import time
 
 prev_nsteps = 0
 prev_interval = 0
-big_I = np.empty(2)
-big_0 = np.empty(2)
-def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=0.1):
+big_I = big_0= big_A_eq= dyn_A= dyn_b= term_A= term_b= pos_constraint= vel_constraint = np.empty(2)
+big_H= big_h= big_A_eq= big_Ba_ineq = np.empty(2)
+
+def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=0.1, variables = None):
 	"""MPC which uses Quadratic Programming solver
 	
 	Keyword Arguments:
@@ -24,8 +25,15 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 		float -- Solution
 	"""
 
-	# global big_I, big_0, big_A_eq, big_Ba_ineq
-	global prev_nsteps, big_I, big_0, prev_interval, dyn_A, dyn_b, term_A, term_b, pos_constraint, vel_constraint, big_H, big_h, big_A_eq, big_Ba_ineq
+	global prev_nsteps, prev_interval, big_I, big_0, dyn_A, dyn_b, term_A, term_b, pos_constraint, vel_constraint, big_H, big_h, big_A_eq, big_Ba_ineq
+	if variables:
+		big_A_eq = variables.get("big_A_eq")
+		big_Ba_ineq = variables.get("big_Ba_ineq")
+		big_H = variables.get("big_H")
+		big_h = variables.get("big_h")
+		prev_nsteps = variables.get("prev_nsteps")
+		prev_interval = variables.get("prev_interval")
+
 
 	timer = time.time()
 
@@ -42,10 +50,13 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 		term_A = np.zeros((1,2*nsteps), dtype=float)
 		term_A[0][0] = 1
 
+		#Concatenate dynamic and terminal constraint
+		big_A_eq = np.row_stack((dyn_A, term_A))
+
+
 	term_b = np.array([actual-desired])
 	
-	#Concatenate dynamic and terminal constraints
-	big_A_eq = np.row_stack((dyn_A, term_A))
+	#Concatenate dynamic and terminal constraint
 	big_b_eq = np.concatenate((dyn_b, term_b))
 
 	#Inequality constraints(Boundary constraints)
@@ -60,25 +71,30 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 	#Relaxation
 	# big_H, big_h, big_A_eq, big_Ba_ineq = MPC_relaxation(interval, nsteps, big_A_eq, big_Ba_ineq)
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		big_H = block_diag([1000000], big_I)
+		big_H = block_diag([1000], big_I)
 		big_h = np.concatenate(([0], big_0))
 		big_A_eq = np.column_stack((np.ones(nsteps + 1) * interval, big_A_eq))
 		big_Ba_ineq = np.column_stack((np.transpose(np.zeros(2*nsteps)), big_Ba_ineq))
+
 		prev_nsteps = nsteps
 		prev_interval = interval
+		variables = {"big_A_eq": big_A_eq, "big_Ba_ineq": big_Ba_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval}
+
 
 	# print(big_H)
 	# print((big_h))
-	print((big_A_eq))
+	# print((big_A_eq))
 	# print((big_b_eq))
-	print((big_Ba_ineq))
+	# print((big_Ba_ineq))
 	# print((big_Bb_ineq))
 	#Calculate solution
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
-	print(u_in[nsteps+1])
-	print(time.time() - timer)
 
-	return u_in[nsteps+1]
+	# print(u_in[nsteps+1])
+	# print(time.time() - timer)
+
+	return u_in[nsteps+1], variables
+
 
 def MPC_dynamic_constraints(actual=0., desired=0.,nsteps=10.,interval=0.1):
 	global big_A, big_b
@@ -121,6 +137,6 @@ def MPC_relaxation(interval, nsteps, big_A_eq, big_Ba_ineq):
 
 if __name__ == "__main__":
 	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
-	MPC_solver(0, 3, 100, 0, 10)
-	MPC_solver(0, 3, 100, 0, 10)
-	MPC_solver(0, 3, 100, 0, 10)
+	u_in, update_var = MPC_solver(0, 3, 100, 0, 10)
+	MPC_solver(0, 3, 100, 0, 10, variables=update_var)
+	MPC_solver(0, 3, 100, 0, 10, variables=update_var)

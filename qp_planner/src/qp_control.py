@@ -72,7 +72,7 @@ pos.x = pos.y = pos.z = 0
 quat.x = quat.y = quat.z = quat.w = 0
 start_y = 0.0
 timer = 0.0
-
+cached_var = {}
 
 def imu_cb(data):
     global roll, pitch, yaw
@@ -213,7 +213,7 @@ def plot(vel_y):
 
 def main():
     global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
-    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer
+    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer, cached_var
     xAnt = yAnt = 0
     home_xy_recorded = False
     rospy.init_node('MAVROS_Listener')
@@ -295,9 +295,9 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t)
-        velocity_y_des = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t)
-        velocity_z_des = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t)
+        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, cached_var)
+        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, cached_var)
+        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, cached_var)
 
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
