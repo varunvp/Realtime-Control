@@ -24,7 +24,7 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 	Returns:
 		float -- Solution
 	"""
-
+	delta = 0.5
 	global prev_nsteps, prev_interval, big_I, big_0, dyn_A, dyn_b, term_A, term_b, pos_constraint, vel_constraint, big_H, big_h, big_A_eq, big_Ba_ineq
 	if variables:
 		big_A_eq = variables.get("big_A_eq")
@@ -48,13 +48,14 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 		dyn_A = np.column_stack((np.eye(nsteps , dtype=float) + np.eye(nsteps, nsteps , 1, dtype=float) * -1, np.eye(nsteps, dtype=float) * interval)) 	#C
 		dyn_b = np.zeros(nsteps, dtype=float)
 		term_A = np.zeros((1,2*nsteps), dtype=float)
-		term_A[0][0] = 1
+		# term_A[0][0] = 1
 
 		#Concatenate dynamic and terminal constraint
 		big_A_eq = np.row_stack((dyn_A, term_A))
 
 
 	term_b = np.array([actual-desired])
+	# term_b = np.array([0])
 	
 	#Concatenate dynamic and terminal constraint
 	big_b_eq = np.concatenate((dyn_b, term_b))
@@ -62,19 +63,29 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 	#Inequality constraints(Boundary constraints)
 	# big_Ba_ineq, big_Bb_ineq = MPC_boundary_constraints(nsteps, limit, desired, origin)
 	if nsteps != prev_nsteps:
-		pos_constraint = np.row_stack( (np.eye(nsteps), np.eye(nsteps) * -1) )
+		# pos_constraint = np.row_stack( (np.eye(nsteps), np.eye(nsteps) * -1) )
+		positive_pos_constraint = np.eye(nsteps, nsteps) * -delta + np.eye(nsteps, nsteps, 1)
+		negative_pos_constraint = np.eye(nsteps, nsteps) * delta - np.eye(nsteps, nsteps, 1)
+		pos_constraint = np.row_stack( (positive_pos_constraint, negative_pos_constraint) )
 		vel_constraint = np.zeros((2 * nsteps, nsteps))
 		big_Ba_ineq = np.column_stack((pos_constraint, vel_constraint))
 
-	big_Bb_ineq = np.concatenate((np.ones(nsteps) * (limit + origin - desired), np.ones(nsteps) * (limit - origin + desired)))
+	# big_Bb_ineq = np.concatenate((np.ones(nsteps) * (limit + origin - desired), np.ones(nsteps) * (limit - origin + desired)))
+	big_Bb_ineq = np.concatenate((np.ones(nsteps) * ((origin + limit - desired) * (1 - delta)), np.ones(nsteps) * (-(origin - limit - desired) *  (1 - delta))))
 
 	#Relaxation
 	# big_H, big_h, big_A_eq, big_Ba_ineq = MPC_relaxation(interval, nsteps, big_A_eq, big_Ba_ineq)
 	if (nsteps != prev_nsteps or interval != prev_interval):
 		big_H = block_diag([1000], big_I)
 		big_h = np.concatenate(([0], big_0))
-		big_A_eq = np.column_stack((np.ones(nsteps + 1) * interval, big_A_eq))
+		# big_A_eq = np.column_stack((np.ones(nsteps + 1) * interval, big_A_eq))
+		big_A_eq = np.column_stack((np.zeros(nsteps + 1), big_A_eq))
+		big_A_eq[nsteps-1][0] = -1
+		big_A_eq[nsteps][1] = 1
+		# big_A_eq[nsteps][2 * nsteps] = interval
 		big_Ba_ineq = np.column_stack((np.transpose(np.zeros(2*nsteps)), big_Ba_ineq))
+		big_Ba_ineq[nsteps-1][0] = 1
+		big_Ba_ineq[2 * nsteps-1][0] = -1
 
 		prev_nsteps = nsteps
 		prev_interval = interval
@@ -90,7 +101,7 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 	#Calculate solution
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
 
-	# print(u_in[nsteps+1])
+	print(u_in)
 	# print(time.time() - timer)
 
 	return u_in[nsteps+1], variables
@@ -137,6 +148,6 @@ def MPC_relaxation(interval, nsteps, big_A_eq, big_Ba_ineq):
 
 if __name__ == "__main__":
 	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
-	u_in, update_var = MPC_solver(0, 3, 100, 0, 10)
-	MPC_solver(0, 3, 100, 0, 10, variables=update_var)
-	MPC_solver(0, 3, 100, 0, 10, variables=update_var)
+	u_in, update_var = MPC_solver(actual=0, desired=3, limit=100, origin=0, nsteps=3)
+	# MPC_solver(0, 3, 100, 0, 10, variables=update_var)
+	# MPC_solver(0, 3, 100, 0, 10, variables=update_var)
