@@ -37,7 +37,7 @@ from gazebo_msgs.msg import ModelStates
 from sensor_msgs.msg import Imu, NavSatFix
 from tf.transformations import euler_from_quaternion
 import quadprog
-import numpy
+import numpy as np
 from numpy import array
 import math
 from qp_matrix import qp_q_dot_des_array
@@ -47,7 +47,7 @@ import qp_matrix
 global R
 global roll, pitch, yaw
 
-n = 10
+n = 4
 t = 0.1
 gps_rate = 0
 cont = 0
@@ -183,10 +183,6 @@ def gazebo_cb(data):
     quat = data.pose[1].orientation
 
 
-def ekf_cb(data):
-    data.pose.position.x 
-
-
 def plot(vel_y):
     global cart_y, desired_y, start_y
 
@@ -235,16 +231,17 @@ def main():
     rospy.Subscriber("/mavros/local_position/pose", PoseStamped, pose_cb)
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
     rospy.Subscriber("/gazebo/model_states", ModelStates, gazebo_cb)
-    rospy.Subscriber("/mavros/local_position/pose", PoseStamped, ekf_cb)
 
     pub = rospy.Publisher('destination_point', PointStamped, queue_size = 1)
     pub2 = rospy.Publisher('gps_point', PointStamped, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher('path', Path, queue_size=1)
     pub5 = rospy.Publisher('ekf_path', Path, queue_size=1)
+    pub6 = rospy.Publisher('mpc_path', Path, queue_size=1)
 
     path = Path()
     ekf_path = Path()
+    mpc_path = Path()
     max_append = 1000
 
     # rospy.spin()
@@ -295,10 +292,15 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, cached_var)
-        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, cached_var)
-        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, cached_var)
+        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, cached_var, True)
+        x_array = cached_var.get("points")
+        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, cached_var, True)
+        y_array = cached_var.get("points")
+        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, cached_var, True)
+        z_array = cached_var.get("points")
 
+        mpc_point_arr = np.transpose(np.row_stack((x_array, y_array, z_array)))
+        # print(mpc_point_arr)
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
         # des_array = [desired_x, desired_y, desired_z]
@@ -368,29 +370,43 @@ def main():
         pose.pose.position.x = pos.x
         pose.pose.position.y = pos.y
         pose.pose.position.z = pos.z
-        pose.pose.orientation.x = quat.x
-        pose.pose.orientation.y = quat.y
-        pose.pose.orientation.z = quat.z
-        pose.pose.orientation.w = quat.w
 
-        # if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
-        pose.header.seq = path.header.seq + 1
-        path.header.frame_id = "local_origin"
-        path.header.stamp = rospy.Time.now()
-        pose.header.stamp = path.header.stamp
-        path.poses.append(pose)
-        ekf_pose.header.seq = ekf_path.header.seq + 1
-        ekf_path.header.frame_id = "local_origin"
-        ekf_path.header.stamp = rospy.Time.now()
-        ekf_pose.header.stamp = ekf_path.header.stamp
-        ekf_path.poses.append(ekf_pose)
-        cont = cont + 1
+        if True:
+            mpc_pose_array = [None] * n
+            for i in range(0, n):
+                mpc_pose = PoseStamped()
+                mpc_pose.header.seq = i
+                mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
+                mpc_pose.header.frame_id = "local_origin"
+                mpc_pose.pose.position.x = mpc_point_arr[i][0] + desired_x - home_x
+                mpc_pose.pose.position.y = mpc_point_arr[i][1] + desired_y - home_y
+                mpc_pose.pose.position.z = mpc_point_arr[i][2] + desired_z - home_z
+                mpc_pose_array[i] = mpc_pose
 
-        xAnt = pose.pose.position.x
+        if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
+            pose.header.seq = path.header.seq + 1
+            path.header.frame_id = "local_origin"
+            path.header.stamp = rospy.Time.now()
+            pose.header.stamp = path.header.stamp
+            path.poses.append(pose)
+            ekf_pose.header.seq = ekf_path.header.seq + 1
+            ekf_path.header.frame_id = "local_origin"
+            ekf_path.header.stamp = rospy.Time.now()
+            ekf_pose.header.stamp = ekf_path.header.stamp
+            ekf_path.poses.append(ekf_pose)
+            # mpc_pose.header.seq = ekf_path.header.seq + 1
+            mpc_path.header.frame_id = "local_origin"
+            mpc_path.header.stamp = rospy.Time.now()
+            # mpc_pose.header.stamp = mpc_path.header.stamp
+            mpc_path.poses = mpc_pose_array
+            cont = cont + 1
+
+        xAnt = pose.pose.orientation.x
         yAnt = pose.pose.position.y
 
         pub4.publish(path)
         pub5.publish(ekf_path)
+        pub6.publish(mpc_path)
 
         if cont > max_append and len(path.poses) != 0 and len(ekf_path.poses):
                 path.poses.pop(0)
@@ -398,11 +414,15 @@ def main():
 
         br.sendTransform((pos.x, pos.y, pos.z), (quat.x, quat.y, quat.z, quat.w), rospy.Time.now(), "base_link", "local_origin")
         br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "fcu", "local_origin")
+
+        
+
+
        
 
 if __name__ == "__main__":
     mavros.set_namespace("/mavros")
     pub1 = SP.get_pub_velocity_cmd_vel(queue_size=3)
     path = Path() 
-    numpy.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
+    np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
     main()
