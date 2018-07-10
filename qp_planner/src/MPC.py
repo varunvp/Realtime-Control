@@ -20,6 +20,8 @@ def MPC_solver(actual=0., desired=0., limit=1000, origin=0, nsteps=10.,interval=
 		desired {float} -- The desired value (default: {0.})
 		nsteps {float} -- Number of steps (default: {10.})
 		interval {float} -- Time Interval (default: {0.1})
+		variables {dict} -- Returns cached variables (default: {None})
+		ret_points {bool} -- Enable to return points in {variables}, under "points" (default: {False})
 	
 	Returns:
 		float -- Solution
