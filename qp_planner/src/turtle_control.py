@@ -24,11 +24,11 @@ current_x = current_y = current_yaw = 0.0
 destination_x = destination_y = destination_yaw = 0.0
 home_y =  home_yaw = 0
 home_x = 0
-limit_x = limit_y = 2
+limit_x = limit_y = 200
 yaw = 0
 home_yaw_recorded = False
-n = 3
-t = 1
+n = 30
+t = .1
 br = tf.TransformBroadcaster()
 cached_var = {}
 lin_vel_lim = .1
@@ -67,7 +67,8 @@ def main():
     pub2 = rospy.Publisher('cmd_vel', Twist, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher('mpc_path', Path, queue_size=1)
-
+    pub5 = rospy.Publisher('obs_point', PointStamped, queue_size = 1)
+    pub6 = rospy.Publisher('turn_point', PointStamped, queue_size = 1)
     mpc_path = Path()
 
     while not rospy.is_shutdown():
@@ -94,18 +95,33 @@ def main():
 
             sys.stdin.flush()
        
-        current_r = math.sqrt(current_x * current_x + current_y * current_y)
+        # current_r = math.sqrt(current_x * current_x + current_y * current_y)
         destination_r = math.sqrt(math.pow(destination_x - current_x, 2) + math.pow(destination_y - current_y, 2))
-        limit_r = math.sqrt(limit_x * limit_x + limit_y * limit_y)
+        # limit_r = math.sqrt(limit_x * limit_x + limit_y * limit_y)
 
+        
         # velocity_r_des, cached_var = MPC_solver(current_r * 0, destination_r, limit_r, home_x, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
         # r_arr = cached_var.get("points")
         # velocity_y_des, cached_var = MPC_solver(current_y, destination_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
 
-        destination_yaw  = math.atan2(destination_y - current_y, destination_x - current_x) * 180 / 3.1416
+        # this is for controlling the turtlel bot, mpc solver only yields paths in cartesian space.
+        dx = destination_x - current_x
+        dy = destination_y - current_y
+
+        velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x, r_limit= limit_x, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y,t_origin=home_y,t_limit=limit_y,nsteps=n,interval=t, variables=cached_var)
+        x_arr = cached_var.get("solution")[1:n+1]
+        y_arr = cached_var.get("solution")[2 * n + 2:2 * n + 1 + n + 1]
+
+        velocity_x_des = np.clip(velocity_x_des, -lin_vel_lim, lin_vel_lim)
+        velocity_y_des = np.clip(velocity_y_des, -lin_vel_lim, lin_vel_lim)
+
+        x_e = x_arr[1] - x_arr[0]
+        y_e = y_arr[1] - y_arr[0]
+        # theta_e = 
+
+        destination_yaw  = math.atan2(y_e, x_e) * 180 / 3.1416
         current_yaw = 360.0 + current_yaw if current_yaw < 0 else current_yaw
         destination_yaw = 360.0 + destination_yaw if destination_yaw < 0 else destination_yaw
-
         if(math.fabs(destination_yaw - current_yaw) > 180):
             if(destination_yaw > current_yaw):
                 temp_desired_yaw = destination_yaw - current_yaw
@@ -115,15 +131,17 @@ def main():
                 temp_current_yaw = current_yaw - destination_yaw
                 temp_desired_yaw = 361
 
-            velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, temp_current_yaw, temp_desired_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
+            velocity_yaw_des = np.clip(temp_desired_yaw - temp_current_yaw, -ang_vel_lim, ang_vel_lim); 
+            # velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, temp_current_yaw, temp_desired_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
             # velocity_yaw_des, cached_var = MPC_solver(temp_current_yaw, temp_desired_yaw, 370, home_yaw, n, t, True, vel_limit = ang_vel_lim, variables = cached_var)
 
         else:
-            velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, current_yaw, destination_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
+            velocity_yaw_des = np.clip(destination_yaw - current_yaw, -ang_vel_lim, ang_vel_lim);
+            # velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, current_yaw, destination_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
             # velocity_yaw_des, cached_var = MPC_solver(current_yaw, destination_yaw, 370, home_yaw, n, t, True, vel_limit = ang_vel_lim, variables = cached_var)
 
         # theta_arr = -(cached_var.get("points") - current_yaw)
-
+        # print(velocity_yaw_des)
 
         destination_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         destination_point.header.frame_id = 'local_origin'
@@ -132,14 +150,31 @@ def main():
         destination_point.point.z = 0
         pub.publish(destination_point)
 
+        obs_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        obs_point.header.frame_id = 'local_origin'
+        obs_point.point.x = 5 
+        obs_point.point.y = 4
+        obs_point.point.z = 0
+        pub5.publish(obs_point)
+
+        turn_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        turn_point.header.frame_id = 'local_origin'
+        turn_point.point.x = -x_arr[1] + destination_x - current_x 
+        turn_point.point.y = -y_arr[1] + destination_y - current_y
+        turn_point.point.z = 0
+        pub6.publish(turn_point)
+
         move_cmd = Twist()
         if(destination_r < 0.01):
             move_cmd.linear.x = 0
             move_cmd.angular.z = 0
 
         else:
-            move_cmd.linear.x = velocity_r_des
-            move_cmd.angular.z = -velocity_yaw_des
+            # move_cmd.linear.x = 0
+
+            move_cmd.linear.x = math.sqrt(velocity_x_des**2 + velocity_y_des**2)
+            move_cmd.angular.z = velocity_yaw_des
+            # -(destination_yaw - current_yaw) * 0.001
         pub2.publish(move_cmd)
 
         boundary_cube = Marker()
@@ -157,29 +192,31 @@ def main():
         boundary_cube.color.b = 0
         pub3.publish(boundary_cube)
 
-        # if True:
-        #     mpc_pose_array = [None] * n
-        #     for i in range(0, n):
-        #         mpc_pose = PoseStamped()
-        #         mpc_pose.header.seq = i
-        #         mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * i)
-        #         mpc_pose.header.frame_id = "local_origin"
-        #         mpc_pose.pose.position.x = r_arr[i] * math.cos(theta_arr[i] * 3.1416/180) + destination_x
-        #         mpc_pose.pose.position.y = r_arr[i] * math.sin(theta_arr[i] * 3.1416/180) + destination_y
-        #         mpc_pose_array[i] = mpc_pose
+        if True:
+            mpc_pose_array = [None] * n
+            for i in range(0, n):
+                mpc_pose = PoseStamped()
+                mpc_pose.header.seq = i
+                mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * i)
+                mpc_pose.header.frame_id = "local_origin"
+                # mpc_pose.pose.position.x = r_arr[i] * math.cos(theta_arr[i] * 3.1416/180) + destination_x
+                mpc_pose.pose.position.x =  - x_arr[i] + destination_x
+                # mpc_pose.pose.position.y = r_arr[i] * math.sin(theta_arr[i] * 3.1416/180) + destination_y
+                mpc_pose.pose.position.y = - y_arr[i] + destination_y
+                mpc_pose_array[i] = mpc_pose
 
-        # if (xAnt != mpc_pose.pose.position.x and yAnt != mpc_pose.pose.position.y):
-        #     # mpc_pose.header.seq = ekf_path.header.seq + 1
-        #     mpc_path.header.frame_id = "local_origin"
-        #     mpc_path.header.stamp = rospy.Time.now()
-        #     # mpc_pose.header.stamp = mpc_path.header.stamp
-        #     mpc_path.poses = mpc_pose_array
-        #     # cont = cont + 1
+        if (xAnt != mpc_pose.pose.position.x and yAnt != mpc_pose.pose.position.y):
+            # mpc_pose.header.seq = ekf_path.header.seq + 1
+            mpc_path.header.frame_id = "local_origin"
+            mpc_path.header.stamp = rospy.Time.now()
+            # mpc_pose.header.stamp = mpc_path.header.stamp
+            mpc_path.poses = mpc_pose_array
+            # cont = cont + 1
 
-        # xAnt = mpc_pose.pose.orientation.x
-        # yAnt = mpc_pose.pose.position.y
+        xAnt = mpc_pose.pose.orientation.x
+        yAnt = mpc_pose.pose.position.y
 
-        # pub4.publish(mpc_path)
+        pub4.publish(mpc_path)
 
         br.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "odom", "local_origin")
         sys.stdin.flush()

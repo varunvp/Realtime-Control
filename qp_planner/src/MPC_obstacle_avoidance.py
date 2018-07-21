@@ -12,7 +12,9 @@ prev_interval = 0
 big_I = big_0= big_A_eq= dyn_A= dyn_b= term_A= term_b= pos_constraint= vel_constraint = np.empty(2)
 big_H= big_h= big_A_eq= big_Ba_ineq = np.empty(2)
 
-def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0., t_desired=0., t_origin=0, nsteps=10.,interval=0.1, ret_points = False, lin_vel_limit = 10000, ang_vel_limit = 10000, variables = None):
+ 
+
+def MPC_solver(r_actual=0., r_desired=0., r_destination=0., r_limit=1000, r_origin=0, t_actual=0., t_desired=0.,t_destination=0.,t_origin=0, t_limit = 1000, nsteps=10.,interval=0.1, ret_points = False, lin_vel_limit = 10000, ang_vel_limit = 10000, variables = None):
 	"""MPC which uses Quadratic Programming solver
 	
 	Keyword Arguments:
@@ -26,8 +28,14 @@ def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0.,
 	Returns:
 		float -- Solution
 	"""
-	# while True:
 	delta = 0.5
+	d = 10000
+	# if(kwargs):
+	# 	ret_points = kwargs.get("ret_points")
+	# 	lin_vel_limit = kwargs.get("lin_vel_limit")
+	# 	ang_vel_limit = kwargs.get("ang_vel_limit")
+	# 	ret_points = kwargs.get("ret_points")
+
 	global prev_nsteps, prev_interval
 	if variables:
 		big_A_eq = variables.get("big_A_eq")
@@ -93,7 +101,7 @@ def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0.,
 	ang_vel_limit_vec = np.ones(2 * nsteps) * ang_vel_limit
 	r_Bb_ineq = np.concatenate((np.ones(nsteps) * ((r_origin + r_limit - r_desired) * (1 - delta)), np.ones(nsteps) * (-(r_origin - r_limit - r_desired) *  (1 - delta)), lin_vel_limit_vec))
 	#t_limit = 400 is assumed as arbitrary value above 360 
-	theta_Bb_ineq = np.concatenate((np.ones(nsteps) * ((t_origin + 370 - t_desired) * (1 - delta)), np.ones(nsteps) * (-(t_origin - 370 - t_desired) *  (1 - delta)), ang_vel_limit_vec))
+	theta_Bb_ineq = np.concatenate((np.ones(nsteps) * ((t_origin + t_limit - t_desired) * (1 - delta)), np.ones(nsteps) * (-(t_origin - t_limit - t_desired) *  (1 - delta)), ang_vel_limit_vec))
 	big_Bb_ineq = np.concatenate((r_Bb_ineq, theta_Bb_ineq))
 
 	#Relaxation
@@ -106,6 +114,7 @@ def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0.,
 		theta_A_eq = r_A_eq
 		big_A_eq = block_diag(r_A_eq, theta_A_eq)
 
+
 		r_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(r_Ba_ineq, 0))), r_Ba_ineq))
 		r_Ba_ineq[nsteps-1][0] = 1
 		r_Ba_ineq[2 * nsteps-1][0] = -1
@@ -116,6 +125,7 @@ def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0.,
 
 		big_Ba_ineq = block_diag(r_Ba_ineq, theta_Ba_ineq)
 
+	
 	# print(big_H)
 	# print((big_h))
 	# print((big_Ba_ineq))
@@ -131,20 +141,72 @@ def MPC_solver(r_actual=0., r_desired=0., r_limit=1000, r_origin=0, t_actual=0.,
 
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
 
-	if (nsteps != prev_nsteps or interval != prev_interval):
-		variables = {"big_A_eq": big_A_eq, "big_Ba_ineq": big_Ba_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": u_in}
+	# if (nsteps != prev_nsteps or interval != prev_interval):
+	
+	traj = u_in
+	#Here r des is x des, t des is y des
+	obs_x = r_destination - 5
+	obs_y = t_destination - 4
+	radius = 3 + 0.05  # 3m plus 5 cm to account for extra margins due to robot dimensions
+	ii = 0
+	# print(r_desired, t_desired)
+	# print(np.shape(u_in))
+	while(d > 0.01 and ii < 10):
+		ii = ii + 1
+		##########################Obstacle####################
+		# def get_obstacle_constraints(obs_x, obs_y, radius, traj, nsteps):
+		x_in = traj[1:nsteps+1]
+		y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
+		# print(np.shape(x_in), np.shape(y_in))
+		barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
+		barrier_cons_B = np.zeros(nsteps)
+		
+		for i in range(1, nsteps-1):
+			h = radius**2 - (x_in[i] - obs_x)**2 - (y_in[i] - obs_y)**2
+
+			barrier_cons_A[i][i+1] = -2 * (x_in[i] - obs_x)
+			barrier_cons_A[i][2 * nsteps + 1 + i + 1] = -2 * (y_in[i]- obs_y)
+			barrier_cons_B[i] = -h		
+		# print barrier_cons_A
+		# print barrier_cons_B
+
+		#################################################################
+		A_eq_d = big_A_eq
+		b_eq_d = big_b_eq - np.dot(big_A_eq, traj)
+
+		# print(np.shape(big_Bb_ineq - np.dot(big_Ba_ineq, u_in)), np.shape(barrier_cons_B))
+		# print(np.shape(barrier_cons_A))
+		# print(np.shape(barrier_cons_B))
+		# print(np.shape(A_eq_d))
+		# print(np.shape(big_Bb_ineq))
+		# print(np.shape(big_Ba_ineq))
+		# print(np.shape(traj))
+		A_ineq_d = np.vstack((big_Ba_ineq, barrier_cons_A))
+		B_ineq_d = np.concatenate((big_Bb_ineq - np.dot(big_Ba_ineq, traj), barrier_cons_B))
+
+
+		d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
+		traj = traj + d_traj_out
+		d = np.linalg.norm(d_traj_out)
+		# print(d)
+
+	print(ii, d)
+	print(time.time() - timer)
+
+	if(True):
+		variables = {"big_A_eq": big_A_eq, "big_Ba_ineq": big_Ba_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj}
 
 		prev_nsteps = nsteps
 		prev_interval = interval
 
-	# print(u_in)
-	# print(time.time() - timer)
+	# print(traj)
+	# print(np.shape(u_in))
 
-	return u_in[nsteps+1], u_in[3 * nsteps+2], variables
+	return traj[nsteps+1], traj[3 * nsteps+2], variables
 
 if __name__ == "__main__":
 	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
-	lin_u, ang_u, update_var = MPC_solver(r_actual=0, r_desired=.001, r_limit=2.828, r_origin=0, t_actual = 361, t_desired = 314, t_origin = .9529, nsteps=3, lin_vel_limit = .1, ang_vel_limit = .1)
+	lin_u, ang_u, update_var = MPC_solver(r_actual=0, r_desired=10, r_limit=20, r_origin=0, t_actual = 0, t_desired = 10, t_origin = 0,t_limit = 20 , nsteps=20)
 	# print(update_var.get("points"))
 	# print lin_u, ang_u
 	# MPC_solver(0, 3, 100, 0, 10, variables=update_var)

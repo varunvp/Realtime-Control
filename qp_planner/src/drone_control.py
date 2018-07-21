@@ -291,11 +291,11 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, True, variables = cached_var)
+        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, True, variables = cached_var, vel_limit = 3)
         x_array = cached_var.get("points")
-        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, True, variables = cached_var)
+        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = 3)
         y_array = cached_var.get("points")
-        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, True, variables = cached_var)
+        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, True, variables = cached_var, vel_limit = 3)
         z_array = cached_var.get("points")
 
         mpc_point_arr = np.transpose(np.row_stack((x_array, y_array, z_array)))
