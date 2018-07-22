@@ -33,6 +33,11 @@ br = tf.TransformBroadcaster()
 cached_var = {}
 lin_vel_lim = .1
 ang_vel_lim = .5
+obs_x = [4, 1, 2]
+obs_y = [4, 3, 1]
+obs_r = [1.5, 1, 0.75]
+obstacles = [obs_x, obs_y, obs_r]
+vehicle_r = .1
 
 def odom_cb(data):
     global current_yaw, current_x, current_y
@@ -67,7 +72,9 @@ def main():
     pub2 = rospy.Publisher('cmd_vel', Twist, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher('mpc_path', Path, queue_size=1)
-    pub5 = rospy.Publisher('obs_point', PointStamped, queue_size = 1)
+    pub5 = rospy.Publisher('obs_point_1', PointStamped, queue_size = 1)
+    pub7 = rospy.Publisher('obs_point_2', PointStamped, queue_size = 1)
+    pub8 = rospy.Publisher('obs_point_3', PointStamped, queue_size = 1)
     pub6 = rospy.Publisher('turn_point', PointStamped, queue_size = 1)
     mpc_path = Path()
 
@@ -104,11 +111,17 @@ def main():
         # r_arr = cached_var.get("points")
         # velocity_y_des, cached_var = MPC_solver(current_y, destination_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
 
-        # this is for controlling the turtlel bot, mpc solver only yields paths in cartesian space.
+        # this is for controlling the turtle bot, mpc solver only yields paths in cartesian space.
         dx = destination_x - current_x
         dy = destination_y - current_y
 
-        velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x, r_limit= limit_x, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y,t_origin=home_y,t_limit=limit_y,nsteps=n,interval=t, variables=cached_var)
+        try:
+            velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x, r_limit= limit_x, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y,t_origin=home_y,t_limit=limit_y,nsteps=n,interval=t, variables=cached_var, obstacles=obstacles, vehicle_r=vehicle_r)
+
+        except ValueError:
+            velocity_x_des = 0
+            velocity_y_des = 0
+            
         x_arr = cached_var.get("solution")[1:n+1]
         y_arr = cached_var.get("solution")[2 * n + 2:2 * n + 1 + n + 1]
 
@@ -150,12 +163,12 @@ def main():
         destination_point.point.z = 0
         pub.publish(destination_point)
 
-        obs_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        obs_point.header.frame_id = 'local_origin'
-        obs_point.point.x = 5 
-        obs_point.point.y = 4
-        obs_point.point.z = 0
-        pub5.publish(obs_point)
+        obs_point_1 = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        obs_point_1.header.frame_id = 'local_origin'
+        obs_point_1.point.x = obs_x[0]
+        obs_point_1.point.y = obs_y[0]
+        obs_point_1.point.z = 0
+        pub5.publish(obs_point_1)
 
         turn_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         turn_point.header.frame_id = 'local_origin'
@@ -163,6 +176,21 @@ def main():
         turn_point.point.y = -y_arr[1] + destination_y - current_y
         turn_point.point.z = 0
         pub6.publish(turn_point)
+
+        obs_point_2 = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        obs_point_2.header.frame_id = 'local_origin'
+        obs_point_2.point.x = obs_x[1] 
+        obs_point_2.point.y = obs_y[1]
+        obs_point_2.point.z = 0
+        pub7.publish(obs_point_2)
+
+        obs_point_3 = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        obs_point_3.header.frame_id = 'local_origin'
+        obs_point_3.point.x = obs_x[2] 
+        obs_point_3.point.y = obs_y[2]
+        obs_point_3.point.z = 0
+        pub8.publish(obs_point_3)
+
 
         move_cmd = Twist()
         if(destination_r < 0.01):
