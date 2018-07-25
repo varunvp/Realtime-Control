@@ -38,9 +38,10 @@ def MPC_solver(r_actual=0., r_desired=0., r_destination=0., r_limit=1000, r_orig
 	ang_vel_limit = kwargs.pop("ang_vel_limit", 10000)
 	variables = kwargs.pop("variables", None)
 	obstacles = kwargs.pop("obstacles", None)
-	obs_x = obstacles[0]
-	obs_y = obstacles[1]
-	obs_r = obstacles[2]
+	if obstacles != None:
+		obs_x = obstacles[0]
+		obs_y = obstacles[1]
+		obs_r = obstacles[2]
 	vehicle_r = kwargs.pop("vehicle_r", 0)
 
 	if(kwargs):
@@ -138,7 +139,7 @@ def MPC_solver(r_actual=0., r_desired=0., r_destination=0., r_limit=1000, r_orig
 	# print((big_h))
 	# print((big_Ba_ineq))
 	# print((big_Bb_ineq))
-	# print((big_A_eq))
+	# # print((big_A_eq))
 	# print((big_b_eq))
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
@@ -152,49 +153,50 @@ def MPC_solver(r_actual=0., r_desired=0., r_destination=0., r_limit=1000, r_orig
 	traj = u_in
 	#Here r des is x des, t des is y des
 
-	obs_x = np.subtract(r_destination, obs_x)
-	obs_y = np.subtract(t_destination, obs_y)
-	obs_r = np.add(obs_r, vehicle_r)
-	# obs_x = np.array([r_destination - 4, r_destination - 1, r_destination - 2])
-	# obs_y = np.array([t_destination - 3, t_destination - 3, t_destination - 1])
-	# obs_r = np.array([1.5 + 0.05, 1 + 0.05, 0.75 + 0.05])  # 3m plus 5 cm to account for extra margins due to robot dimensions
-	ii = 0
+	if obstacles != None:
+		obs_x = np.subtract(r_destination, obs_x)
+		obs_y = np.subtract(t_destination, obs_y)
+		obs_r = np.add(obs_r, vehicle_r)
+		# obs_x = np.array([r_destination - 4, r_destination - 1, r_destination - 2])
+		# obs_y = np.array([t_destination - 3, t_destination - 3, t_destination - 1])
+		# obs_r = np.array([1.5 + 0.05, 1 + 0.05, 0.75 + 0.05])  # 3m plus 5 cm to account for extra margins due to robot dimensions
+		ii = 0
 
-	while(d > 0.01 and ii < 10):
-		ii = ii + 1
-		##########################Obstacle####################
-		# def get_obstacle_constraints(obs_x, obs_y, obs_r, traj, nsteps):
-		x_in = traj[1:nsteps+1]
-		y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
-		# print(np.shape(x_in), np.shape(y_in))
-		
-		A_ineq_d = big_Ba_ineq
- 		B_ineq_d = big_Bb_ineq - np.dot(A_ineq_d, traj)
-
-		A_eq_d = big_A_eq
-		b_eq_d = big_b_eq - np.dot(big_A_eq, traj)
+		while(d > 0.01 and ii < 10):
+			ii = ii + 1
+			##########################Obstacle####################
+			# def get_obstacle_constraints(obs_x, obs_y, obs_r, traj, nsteps):
+			x_in = traj[1:nsteps+1]
+			y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
+			# print(np.shape(x_in), np.shape(y_in))
 			
-		for j in range(0, 3):
-			barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
-			barrier_cons_B = np.zeros(nsteps)
+			A_ineq_d = big_Ba_ineq
+	 		B_ineq_d = big_Bb_ineq - np.dot(A_ineq_d, traj)
 
-			for i in range(1, nsteps-1):
-				h = obs_r[j] **2 - (x_in[i] - obs_x[j])**2 - (y_in[i] - obs_y[j])**2
+			A_eq_d = big_A_eq
+			b_eq_d = big_b_eq - np.dot(big_A_eq, traj)
+				
+			for j in range(0, 3):
+				barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
+				barrier_cons_B = np.zeros(nsteps)
 
-				barrier_cons_A[i][i+1] = -2 * (x_in[i] - obs_x[j])
-				barrier_cons_A[i][2 * nsteps + 1 + i + 1] = -2 * (y_in[i]- obs_y[j])
-				barrier_cons_B[i] = -h		
+				for i in range(1, nsteps-1):
+					h = obs_r[j] **2 - (x_in[i] - obs_x[j])**2 - (y_in[i] - obs_y[j])**2
 
-			A_ineq_d = np.vstack((A_ineq_d, barrier_cons_A))
-	 		B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
- 		
-		d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
-		traj = traj + d_traj_out
-		d = np.linalg.norm(d_traj_out)
-		# print(d)
+					barrier_cons_A[i][i+1] = -2 * (x_in[i] - obs_x[j])
+					barrier_cons_A[i][2 * nsteps + 1 + i + 1] = -2 * (y_in[i]- obs_y[j])
+					barrier_cons_B[i] = -h		
 
-	print(ii, d)
-	print(time.time() - timer)
+				A_ineq_d = np.vstack((A_ineq_d, barrier_cons_A))
+		 		B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
+	 		
+			d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
+			traj = traj + d_traj_out
+			d = np.linalg.norm(d_traj_out)
+			# print(d)
+
+	# print(ii, d)
+	# print(time.time() - timer)
 
 	# if (nsteps != prev_nsteps or interval != prev_interval):
 	if(True):

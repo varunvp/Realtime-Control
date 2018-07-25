@@ -8,6 +8,7 @@ import tf
 
 from std_msgs.msg import Header, Float32, Float64, Empty
 from geometry_msgs.msg import PoseStamped, TwistStamped, Vector3, Quaternion, Point, Twist, PointStamped
+from sensor_msgs.msg import BatteryState
 from nav_msgs.msg import Path, Odometry
 from visualization_msgs.msg import Marker
 from gazebo_msgs.msg import ModelStates
@@ -30,20 +31,25 @@ home_yaw_recorded = False
 n = 30
 t = .1
 br = tf.TransformBroadcaster()
+br2 = tf.TransformBroadcaster()
 cached_var = {}
-lin_vel_lim = .1
-ang_vel_lim = .5
-obs_x = [4, 1, 2]
-obs_y = [4, 3, 1]
-obs_r = [1.5, 1, 0.75]
+lin_vel_lim = .08
+ang_vel_lim = .4
+disp_obs_x = [1., 1.5, 2.]
+disp_obs_y = [0., -0.5, 0.]
+obs_x = np.array(disp_obs_x) * 0.95
+obs_y = np.array(disp_obs_y) * 0.95
+obs_r = [.14, .125, 0.125]
 obstacles = [obs_x, obs_y, obs_r]
-vehicle_r = .1
+vehicle_r = .16
+batt_low = False
+scale_factor = 1.0
 
 def odom_cb(data):
     global current_yaw, current_x, current_y
 
-    current_x = data.pose.pose.position.x
-    current_y = data.pose.pose.position.y
+    current_x = -data.pose.pose.position.x
+    current_y = -data.pose.pose.position.y
     orientation_q = data.pose.pose.orientation
     orientation_list = (orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w)
     (roll, pitch, current_yaw) = euler_from_quaternion(orientation_list)
@@ -55,6 +61,15 @@ def calc_target_cb(data):
     destination_x = home_x + data.pose.position.x
     destination_y = home_y + data.pose.position.y
 
+def batt_voltage_cb(data):
+    
+    if data.voltage < 10.0:
+        print("Battery critical")
+        batt_low = True
+
+    elif(data.voltage < 11.0):
+        print("Battery low")
+
 
 def main():
     global home_yaw, home_yaw_recorded, home_x, home_y, current_x, current_y, current_yaw, limit_x, limit_y, n, t, cached_var, ang_vel_lim, lin_vel_lim
@@ -65,8 +80,9 @@ def main():
     
     rate = rospy.Rate(10.0)
 
-    rospy.Subscriber("/odom", Odometry, odom_cb)
+    rospy.Subscriber("/odom_rf2o", Odometry, odom_cb)
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
+    rospy.Subscriber("/battery_state", BatteryState, batt_voltage_cb)
 
     pub = rospy.Publisher('destination_point', PointStamped, queue_size = 1)
     pub2 = rospy.Publisher('cmd_vel', Twist, queue_size = 5)
@@ -75,7 +91,7 @@ def main():
     pub5 = rospy.Publisher('obs_point_1', PointStamped, queue_size = 1)
     pub7 = rospy.Publisher('obs_point_2', PointStamped, queue_size = 1)
     pub8 = rospy.Publisher('obs_point_3', PointStamped, queue_size = 1)
-    pub6 = rospy.Publisher('turn_point', PointStamped, queue_size = 1)
+    pub6 = rospy.Publisher('turtle_point', PointStamped, queue_size = 1)
     mpc_path = Path()
 
     while not rospy.is_shutdown():
@@ -112,11 +128,11 @@ def main():
         # velocity_y_des, cached_var = MPC_solver(current_y, destination_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
 
         # this is for controlling the turtle bot, mpc solver only yields paths in cartesian space.
-        dx = destination_x - current_x
-        dy = destination_y - current_y
+        dx = destination_x * scale_factor - current_x
+        dy = destination_y * scale_factor - current_y
 
         try:
-            velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x, r_limit= limit_x, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y,t_origin=home_y,t_limit=limit_y,nsteps=n,interval=t, variables=cached_var, obstacles=obstacles, vehicle_r=vehicle_r)
+            velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x*scale_factor, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y*scale_factor,t_origin=home_y,nsteps=n,interval=t, variables=cached_var, vehicle_r=vehicle_r, obstacles=obstacles)
 
         except ValueError:
             velocity_x_des = 0
@@ -165,35 +181,35 @@ def main():
 
         obs_point_1 = PointStamped(header=Header(stamp=rospy.get_rostime()))
         obs_point_1.header.frame_id = 'local_origin'
-        obs_point_1.point.x = obs_x[0]
-        obs_point_1.point.y = obs_y[0]
+        obs_point_1.point.x = disp_obs_x[0]
+        obs_point_1.point.y = disp_obs_y[0]
         obs_point_1.point.z = 0
         pub5.publish(obs_point_1)
 
-        turn_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        turn_point.header.frame_id = 'local_origin'
-        turn_point.point.x = -x_arr[1] + destination_x - current_x 
-        turn_point.point.y = -y_arr[1] + destination_y - current_y
-        turn_point.point.z = 0
-        pub6.publish(turn_point)
+        turtle_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        turtle_point.header.frame_id = 'local_origin'
+        turtle_point.point.x = current_x 
+        turtle_point.point.y = current_y
+        turtle_point.point.z = 0
+        pub6.publish(turtle_point)
 
         obs_point_2 = PointStamped(header=Header(stamp=rospy.get_rostime()))
         obs_point_2.header.frame_id = 'local_origin'
-        obs_point_2.point.x = obs_x[1] 
-        obs_point_2.point.y = obs_y[1]
+        obs_point_2.point.x = disp_obs_x[1] 
+        obs_point_2.point.y = disp_obs_y[1]
         obs_point_2.point.z = 0
         pub7.publish(obs_point_2)
 
         obs_point_3 = PointStamped(header=Header(stamp=rospy.get_rostime()))
         obs_point_3.header.frame_id = 'local_origin'
-        obs_point_3.point.x = obs_x[2] 
-        obs_point_3.point.y = obs_y[2]
+        obs_point_3.point.x = disp_obs_x[2] 
+        obs_point_3.point.y = disp_obs_y[2]
         obs_point_3.point.z = 0
         pub8.publish(obs_point_3)
 
 
         move_cmd = Twist()
-        if(destination_r < 0.01):
+        if(destination_r < 0.1):
             move_cmd.linear.x = 0
             move_cmd.angular.z = 0
 
@@ -201,7 +217,7 @@ def main():
             # move_cmd.linear.x = 0
 
             move_cmd.linear.x = math.sqrt(velocity_x_des**2 + velocity_y_des**2)
-            move_cmd.angular.z = velocity_yaw_des
+            move_cmd.angular.z = -velocity_yaw_des
             # -(destination_yaw - current_yaw) * 0.001
         pub2.publish(move_cmd)
 
@@ -247,6 +263,7 @@ def main():
         pub4.publish(mpc_path)
 
         br.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "odom", "local_origin")
+        # br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "odom", "base_link")
         sys.stdin.flush()
 
 
