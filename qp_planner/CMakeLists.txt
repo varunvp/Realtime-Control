@@ -54,6 +54,9 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    algomsg.msg
+   CircleObstacle.msg
+   SegmentObstacle.msg
+   Obstacles.msg
 #   Message2.msg
  )
 

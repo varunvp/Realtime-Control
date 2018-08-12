@@ -104,6 +104,8 @@ def qp_q_dot_des_array(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
     return u_in
     # print(u_in)
 
+# def qp_holonomic_solver():
+    
 if __name__ == "__main__":
     actual = [0., 0., 0.]
     desired = [3., 5., 7.]

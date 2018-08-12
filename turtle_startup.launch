@@ -1,0 +1,60 @@
+<launch>
+	<node name="scans_merger" pkg="obstacle_detector" type="scans_merger_node">
+	  <remap from="/scan" to="/front_scan"/>
+
+	  <param name="active"            value="true"/>
+	  <param name="publish_scan"      value="true"/>
+	  <param name="publish_pcl"       value="true"/>
+
+	  <param name="ranges_num"        value="1000"/>
+
+	  <param name="min_scanner_range" value="0.05"/>
+	  <param name="max_scanner_range" value="10.0"/>
+
+	  <param name="min_x_range"       value="-1.0"/>
+	  <param name="max_x_range"       value="1.0"/>
+	  <param name="min_y_range"       value="-1.0"/>
+	  <param name="max_y_range"       value="1.0"/>
+
+	  <param name="fixed_frame_id"   value="base_scan"/>
+	  <param name="target_frame_id"   value="base_scan"/>
+	</node>
+
+	<node name="obstacle_extractor" pkg="obstacle_detector" type="obstacle_extractor_node">
+	  <param name="active"               value="true"/>
+	  <param name="use_scan"             value="false"/>
+	  <param name="use_pcl"              value="true"/>
+
+	  <param name="use_split_and_merge"    value="false"/>
+	  <param name="circles_from_visibles"  value="true"/>
+	  <param name="discard_converted_segments" value="true"/>
+	  <param name="transform_coordinates"  value="true"/>
+
+	  <param name="min_group_points"     value="5"/>
+
+	  <param name="max_group_distance"   value="0.1"/>
+	  <param name="distance_proportion"  value="0.00628"/>
+	  <param name="max_split_distance"   value="0.2"/>
+	  <param name="max_merge_separation" value="0.2"/>
+	  <param name="max_merge_spread"     value="0.2"/>
+	  <param name="max_circle_radius"    value="1"/>
+	  <param name="radius_enlargement"   value="0.1"/>
+
+	  <param name="frame_id"             value="odom"/>
+	</node>
+
+	<node pkg="rf2o_laser_odometry" type="rf2o_laser_odometry_node" name="rf2o_laser_odometry" output="screen">
+    <param name="laser_scan_topic" value="/front_scan"/>        # topic where the lidar scans are being published
+    <param name="odom_topic" value="/odom_rf2o" />              # topic where tu publish the odometry estimations
+    <param name="publish_tf" value="false" />                   # wheter or not to publish the tf::transform (base->odom)
+    <param name="base_frame_id" value="/base_link"/>            # frame_id (tf) of the mobile robot base. A tf transform from the laser_frame to the base_frame is mandatory
+    <param name="odom_frame_id" value="/odom" />                # frame_id (tf) to publish the odometry estimations    
+    <param name="init_pose_from_topic" value="" /> # (Odom topic) Leave empty to start at point (0,0)
+    <param name="freq" value="6.0"/>                            # Execution frequency.
+    <param name="verbose" value="true" />                       # verbose
+  </node>
+
+  <include file="$(find turtlebot_gazebo)/launch/turtlebot_gazebo_rviz.launch"/>
+
+  <node name="mpc_control" pkg="qp_planner" type="turtle_control.py" output="screen" respawn="true" args="" />
+</launch>

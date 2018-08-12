@@ -20,6 +20,8 @@ from qp_matrix import qp_q_dot_des_array
 from MPC_obstacle_avoidance import MPC_solver
 import qp_matrix
 from tf.transformations import euler_from_quaternion
+from qp_planner.msg import algomsg
+from qp_planner.msg import Obstacles
 
 current_x = current_y = current_yaw = 0.0
 destination_x = destination_y = destination_yaw = 0.0
@@ -28,39 +30,40 @@ home_x = 0
 limit_x = limit_y = 200
 yaw = 0
 home_yaw_recorded = False
-n = 30
+n = 20
 t = .1
 br = tf.TransformBroadcaster()
 br2 = tf.TransformBroadcaster()
 cached_var = {}
-lin_vel_lim = .08
+lin_vel_lim = .07
 ang_vel_lim = .4
-disp_obs_x = [1., 1.5, 2.]
-disp_obs_y = [0., -0.5, 0.]
-obs_x = np.array(disp_obs_x) * 0.95
-obs_y = np.array(disp_obs_y) * 0.95
-obs_r = [.14, .125, 0.125]
-obstacles = [obs_x, obs_y, obs_r]
-vehicle_r = .16
+
+obs_x = obs_y = obs_r = []
+
+obstacles = []
+vehicle_r = 0.1
 batt_low = False
 scale_factor = 1.0
+is_simulation = 1              #-1 for real, 1 for simulation
 
+#Odometry data callback
 def odom_cb(data):
     global current_yaw, current_x, current_y
 
-    current_x = -data.pose.pose.position.x
-    current_y = -data.pose.pose.position.y
+    current_x = data.pose.pose.position.x
+    current_y = data.pose.pose.position.y
     orientation_q = data.pose.pose.orientation
     orientation_list = (orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w)
     (roll, pitch, current_yaw) = euler_from_quaternion(orientation_list)
     (roll, pitch, current_yaw) = (0, 0, current_yaw  * 180.0/3.1416)
 
-
+#Callback for setting destination for the solver
 def calc_target_cb(data):
     global destination_x, destination_y, desired_z
     destination_x = home_x + data.pose.position.x
     destination_y = home_y + data.pose.position.y
 
+#To check for battery voltage of the Turlebot
 def batt_voltage_cb(data):
     
     if data.voltage < 10.0:
@@ -70,28 +73,39 @@ def batt_voltage_cb(data):
     elif(data.voltage < 11.0):
         print("Battery low")
 
+#Receives obstacles info(x, y, radius) from the topic
+def obstacles_cb(data):
+    global obs_x, obs_y, obs_r, obstacles
+
+    if(data != None):
+        obs_x = np.array([obj.center.x for obj in data.circles])
+        obs_y = np.array([obj.center.y for obj in data.circles])
+        obs_r = np.array([obj.radius for obj in data.circles])
+        obstacles = [obs_x, obs_y, obs_r]
 
 def main():
     global home_yaw, home_yaw_recorded, home_x, home_y, current_x, current_y, current_yaw, limit_x, limit_y, n, t, cached_var, ang_vel_lim, lin_vel_lim
-    global limit_x, limit_y
+    global limit_x, limit_y, obstacles, obs_x, obs_y, obs_r
     xAnt = yAnt = 0
 
-    rospy.init_node('MAVROS_Listener')
-    
+    rospy.init_node('Turtle_Controller')
+
     rate = rospy.Rate(10.0)
 
-    rospy.Subscriber("/odom_rf2o", Odometry, odom_cb)
+    #Lidar odometry
+    # rospy.Subscriber("/odom_rf2o", Odometry, odom_cb)
+    #Wheel encoder odometry
+    rospy.Subscriber("/odom", Odometry, odom_cb)
+
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
     rospy.Subscriber("/battery_state", BatteryState, batt_voltage_cb)
+    rospy.Subscriber("/raw_obstacles", Obstacles, obstacles_cb)
 
     pub = rospy.Publisher('destination_point', PointStamped, queue_size = 1)
     pub2 = rospy.Publisher('cmd_vel', Twist, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher('mpc_path', Path, queue_size=1)
-    pub5 = rospy.Publisher('obs_point_1', PointStamped, queue_size = 1)
-    pub7 = rospy.Publisher('obs_point_2', PointStamped, queue_size = 1)
-    pub8 = rospy.Publisher('obs_point_3', PointStamped, queue_size = 1)
-    pub6 = rospy.Publisher('turtle_point', PointStamped, queue_size = 1)
+    pub5 = rospy.Publisher('turtle_point', PointStamped, queue_size = 1)
     mpc_path = Path()
 
     while not rospy.is_shutdown():
@@ -105,34 +119,33 @@ def main():
             x = ready[0].read(1)
 
             if x == 'x':
+                sys.stdin.flush()
                 limit_x = float(raw_input('Enter x limit:'))
 
             if x == 'y':
+                sys.stdin.flush()
                 limit_y = float(raw_input('Enter y limit:'))
 
             if x == 'n':
+                sys.stdin.flush()
                 n = int(raw_input("Enter nsteps:"))
 
             if x == 't':
+                sys.stdin.flush()
                 t = float(raw_input("Enter timestep duration:"))
 
-            sys.stdin.flush()
        
         # current_r = math.sqrt(current_x * current_x + current_y * current_y)
         destination_r = math.sqrt(math.pow(destination_x - current_x, 2) + math.pow(destination_y - current_y, 2))
         # limit_r = math.sqrt(limit_x * limit_x + limit_y * limit_y)
 
-        
-        # velocity_r_des, cached_var = MPC_solver(current_r * 0, destination_r, limit_r, home_x, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
-        # r_arr = cached_var.get("points")
-        # velocity_y_des, cached_var = MPC_solver(current_y, destination_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = lin_vel_lim)
-
         # this is for controlling the turtle bot, mpc solver only yields paths in cartesian space.
-        dx = destination_x * scale_factor - current_x
-        dy = destination_y * scale_factor - current_y
+        dx = destination_x - current_x
+        dy = destination_y - current_y
 
+        #Calls to the MPC solver
         try:
-            velocity_x_des, velocity_y_des, cached_var = MPC_solver(r_actual=dx, r_desired=0., r_destination = destination_x*scale_factor, r_origin=home_x,t_actual=dy,t_desired=0,t_destination=destination_y*scale_factor,t_origin=home_y,nsteps=n,interval=t, variables=cached_var, vehicle_r=vehicle_r, obstacles=obstacles)
+            velocity_x_des, velocity_y_des, cached_var = MPC_solver(x_actual=dx, x_destination = destination_x, x_origin=home_x, y_actual=dy, y_destination = destination_y, y_origin=home_y, nsteps=n, interval=t, variables=cached_var, vehicle_r=vehicle_r, obstacles=obstacles)
 
         except ValueError:
             velocity_x_des = 0
@@ -146,11 +159,12 @@ def main():
 
         x_e = x_arr[1] - x_arr[0]
         y_e = y_arr[1] - y_arr[0]
-        # theta_e = 
 
         destination_yaw  = math.atan2(y_e, x_e) * 180 / 3.1416
         current_yaw = 360.0 + current_yaw if current_yaw < 0 else current_yaw
         destination_yaw = 360.0 + destination_yaw if destination_yaw < 0 else destination_yaw
+
+        #This part controls the yaw of the turtlebot, taking into account the shortest direction for the desired yaw
         if(math.fabs(destination_yaw - current_yaw) > 180):
             if(destination_yaw > current_yaw):
                 temp_desired_yaw = destination_yaw - current_yaw
@@ -161,17 +175,25 @@ def main():
                 temp_desired_yaw = 361
 
             velocity_yaw_des = np.clip(temp_desired_yaw - temp_current_yaw, -ang_vel_lim, ang_vel_lim); 
-            # velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, temp_current_yaw, temp_desired_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
-            # velocity_yaw_des, cached_var = MPC_solver(temp_current_yaw, temp_desired_yaw, 370, home_yaw, n, t, True, vel_limit = ang_vel_lim, variables = cached_var)
 
         else:
             velocity_yaw_des = np.clip(destination_yaw - current_yaw, -ang_vel_lim, ang_vel_lim);
-            # velocity_r_des, velocity_yaw_des, cached_var = MPC_solver(0, destination_r, limit_r, home_x, current_yaw, destination_yaw, home_yaw, n, t, lin_vel_limit = lin_vel_lim, ang_vel_limit = ang_vel_lim, variables=cached_var)
-            # velocity_yaw_des, cached_var = MPC_solver(current_yaw, destination_yaw, 370, home_yaw, n, t, True, vel_limit = ang_vel_lim, variables = cached_var)
 
-        # theta_arr = -(cached_var.get("points") - current_yaw)
-        # print(velocity_yaw_des)
+        move_cmd = Twist()
+        if(destination_r < 0.1):
+            move_cmd.linear.x = 0
+            move_cmd.angular.z = 0
 
+        elif(math.fabs(destination_yaw - ((current_yaw - 180) % 360)) > 20):
+            move_cmd.linear.x = 0
+            move_cmd.angular.z = is_simulation * velocity_yaw_des * 2
+
+        else:
+            move_cmd.linear.x = math.sqrt(velocity_x_des**2 + velocity_y_des**2)
+            move_cmd.angular.z = is_simulation * velocity_yaw_des
+        pub2.publish(move_cmd)
+
+        #From hereon, deals with visualization in RViz
         destination_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         destination_point.header.frame_id = 'local_origin'
         destination_point.point.x = destination_x - home_x
@@ -179,47 +201,12 @@ def main():
         destination_point.point.z = 0
         pub.publish(destination_point)
 
-        obs_point_1 = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        obs_point_1.header.frame_id = 'local_origin'
-        obs_point_1.point.x = disp_obs_x[0]
-        obs_point_1.point.y = disp_obs_y[0]
-        obs_point_1.point.z = 0
-        pub5.publish(obs_point_1)
-
         turtle_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         turtle_point.header.frame_id = 'local_origin'
         turtle_point.point.x = current_x 
         turtle_point.point.y = current_y
         turtle_point.point.z = 0
-        pub6.publish(turtle_point)
-
-        obs_point_2 = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        obs_point_2.header.frame_id = 'local_origin'
-        obs_point_2.point.x = disp_obs_x[1] 
-        obs_point_2.point.y = disp_obs_y[1]
-        obs_point_2.point.z = 0
-        pub7.publish(obs_point_2)
-
-        obs_point_3 = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        obs_point_3.header.frame_id = 'local_origin'
-        obs_point_3.point.x = disp_obs_x[2] 
-        obs_point_3.point.y = disp_obs_y[2]
-        obs_point_3.point.z = 0
-        pub8.publish(obs_point_3)
-
-
-        move_cmd = Twist()
-        if(destination_r < 0.1):
-            move_cmd.linear.x = 0
-            move_cmd.angular.z = 0
-
-        else:
-            # move_cmd.linear.x = 0
-
-            move_cmd.linear.x = math.sqrt(velocity_x_des**2 + velocity_y_des**2)
-            move_cmd.angular.z = -velocity_yaw_des
-            # -(destination_yaw - current_yaw) * 0.001
-        pub2.publish(move_cmd)
+        pub5.publish(turtle_point)
 
         boundary_cube = Marker()
         boundary_cube.header.frame_id = 'local_origin'
@@ -243,19 +230,14 @@ def main():
                 mpc_pose.header.seq = i
                 mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * i)
                 mpc_pose.header.frame_id = "local_origin"
-                # mpc_pose.pose.position.x = r_arr[i] * math.cos(theta_arr[i] * 3.1416/180) + destination_x
-                mpc_pose.pose.position.x =  - x_arr[i] + destination_x
-                # mpc_pose.pose.position.y = r_arr[i] * math.sin(theta_arr[i] * 3.1416/180) + destination_y
+                mpc_pose.pose.position.x = - x_arr[i] + destination_x
                 mpc_pose.pose.position.y = - y_arr[i] + destination_y
                 mpc_pose_array[i] = mpc_pose
 
         if (xAnt != mpc_pose.pose.position.x and yAnt != mpc_pose.pose.position.y):
-            # mpc_pose.header.seq = ekf_path.header.seq + 1
             mpc_path.header.frame_id = "local_origin"
             mpc_path.header.stamp = rospy.Time.now()
-            # mpc_pose.header.stamp = mpc_path.header.stamp
             mpc_path.poses = mpc_pose_array
-            # cont = cont + 1
 
         xAnt = mpc_pose.pose.orientation.x
         yAnt = mpc_pose.pose.position.y
@@ -263,12 +245,9 @@ def main():
         pub4.publish(mpc_path)
 
         br.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "odom", "local_origin")
-        # br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "odom", "base_link")
-        sys.stdin.flush()
-
+        # br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "local_origin", "base_scan")
 
 
 if __name__ == "__main__":
-    path = Path() 
     np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
     main()
