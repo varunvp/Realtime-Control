@@ -1,30 +1,25 @@
 #!/usr/bin/python
-import os
-import rospy
-import roslib
-import select
-import sys
-import tf
+import os, rospy, roslib, select, sys, tf, time, math, qp_matrix, quadprog
 
 from std_msgs.msg import Header, Float32, Float64, Empty
 from geometry_msgs.msg import PoseStamped, TwistStamped, Vector3, Quaternion, Point, Twist, PointStamped
 from sensor_msgs.msg import BatteryState
 from nav_msgs.msg import Path, Odometry
 from visualization_msgs.msg import Marker
-from gazebo_msgs.msg import ModelStates
-import quadprog
+from gazebo_msgs.msg import ModelStates, ModelState
 import numpy as np
 from numpy import array
-import math
 from qp_matrix import qp_q_dot_des_array
 from MPC_obstacle_avoidance import MPC_solver
-import qp_matrix
 from tf.transformations import euler_from_quaternion
 from qp_planner.msg import algomsg
 from qp_planner.msg import Obstacles
 
 current_x = current_y = current_yaw = 0.0
 destination_x = destination_y = destination_yaw = 0.0
+final_pose = [0, 0, 0]
+init_pose = [0, 0, 0]
+current_pose = [0, 0, 0]
 home_y =  home_yaw = 0
 home_x = 0
 limit_x = limit_y = 200
@@ -34,21 +29,42 @@ n = 20
 t = .1
 br = tf.TransformBroadcaster()
 br2 = tf.TransformBroadcaster()
+pub6 = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size = 1)
 cached_var = {}
-lin_vel_lim = .07
+lin_vel_lim = .1
 ang_vel_lim = .4
 
 obs_x = obs_y = obs_r = []
-
+obs_v = 0.
 obstacles = []
 vehicle_r = 0.1
 batt_low = False
 scale_factor = 1.0
 is_simulation = 1              #-1 for real, 1 for simulation
 
+counter = 0
+max_time = 0.
+min_time = 1000.
+total_time = 0.
+
+def model_state_cb(data):
+    obstacle = ModelState()
+
+    # index_of_interest = -1
+    # for i in range(len(data.name)):
+    #     if data.model_name[i] == 'unit_cylinder':
+    #         index_of_interest = i
+    #         break
+
+    obstacle.model_name = "unit_cylinder"
+    obstacle.pose = data.pose[2]
+    obstacle.twist.linear.x = 0.1
+    obstacle.reference_frame = "world"
+    pub6.publish(obstacle)
+
 #Odometry data callback
 def odom_cb(data):
-    global current_yaw, current_x, current_y
+    global current_yaw, current_x, current_y, current_pose
 
     current_x = data.pose.pose.position.x
     current_y = data.pose.pose.position.y
@@ -59,9 +75,10 @@ def odom_cb(data):
 
 #Callback for setting destination for the solver
 def calc_target_cb(data):
-    global destination_x, destination_y, desired_z
+    global destination_x, destination_y, final_pose
     destination_x = home_x + data.pose.position.x
     destination_y = home_y + data.pose.position.y
+    final_pose = [destination_x,  destination_y, 0]
 
 #To check for battery voltage of the Turlebot
 def batt_voltage_cb(data):
@@ -85,7 +102,7 @@ def obstacles_cb(data):
 
 def main():
     global home_yaw, home_yaw_recorded, home_x, home_y, current_x, current_y, current_yaw, limit_x, limit_y, n, t, cached_var, ang_vel_lim, lin_vel_lim
-    global limit_x, limit_y, obstacles, obs_x, obs_y, obs_r
+    global limit_x, limit_y, obstacles, obs_x, obs_y, obs_r, max_time, min_time, counter, total_time
     xAnt = yAnt = 0
 
     rospy.init_node('Turtle_Controller')
@@ -100,12 +117,14 @@ def main():
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
     rospy.Subscriber("/battery_state", BatteryState, batt_voltage_cb)
     rospy.Subscriber("/raw_obstacles", Obstacles, obstacles_cb)
+    rospy.Subscriber("/gazebo/model_states", ModelStates, model_state_cb)
 
     pub = rospy.Publisher('destination_point', PointStamped, queue_size = 1)
     pub2 = rospy.Publisher('cmd_vel', Twist, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher('mpc_path', Path, queue_size=1)
     pub5 = rospy.Publisher('turtle_point', PointStamped, queue_size = 1)
+    
     mpc_path = Path()
 
     while not rospy.is_shutdown():
@@ -133,7 +152,6 @@ def main():
             if x == 't':
                 sys.stdin.flush()
                 t = float(raw_input("Enter timestep duration:"))
-
        
         # current_r = math.sqrt(current_x * current_x + current_y * current_y)
         destination_r = math.sqrt(math.pow(destination_x - current_x, 2) + math.pow(destination_y - current_y, 2))
@@ -142,14 +160,34 @@ def main():
         # this is for controlling the turtle bot, mpc solver only yields paths in cartesian space.
         dx = destination_x - current_x
         dy = destination_y - current_y
+        current_pose = [dx, dy, 0]
 
+        timer = time.time()
         #Calls to the MPC solver
         try:
-            velocity_x_des, velocity_y_des, cached_var = MPC_solver(x_actual=dx, x_destination = destination_x, x_origin=home_x, y_actual=dy, y_destination = destination_y, y_origin=home_y, nsteps=n, interval=t, variables=cached_var, vehicle_r=vehicle_r, obstacles=obstacles)
+            velocity_x_des, velocity_y_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, nsteps=n, interval=t, variables=cached_var, vehicle_r=vehicle_r, obstacles=obstacles)
 
         except ValueError:
             velocity_x_des = 0
             velocity_y_des = 0
+
+        current_time = time.time() - timer
+
+        if(current_time > max_time):
+            max_time = current_time
+
+        if(current_time < min_time):
+            min_time = current_time
+
+        total_time += current_time
+        counter = counter + 1
+        avg_time = total_time / counter
+
+        if(counter > 100000):
+            total_time = 0.
+            counter = 0
+        print "Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time)
+        # print(time.time() - timer)
             
         x_arr = cached_var.get("solution")[1:n+1]
         y_arr = cached_var.get("solution")[2 * n + 2:2 * n + 1 + n + 1]

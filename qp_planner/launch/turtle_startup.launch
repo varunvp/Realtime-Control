@@ -9,12 +9,12 @@
 	  <param name="ranges_num"        value="1000"/>
 
 	  <param name="min_scanner_range" value="0.05"/>
-	  <param name="max_scanner_range" value="10.0"/>
+	  <param name="max_scanner_range" value="1.0"/>
 
-	  <param name="min_x_range"       value="-1.0"/>
-	  <param name="max_x_range"       value="1.0"/>
-	  <param name="min_y_range"       value="-1.0"/>
-	  <param name="max_y_range"       value="1.0"/>
+	  <param name="min_x_range"       value="-0.8"/>
+	  <param name="max_x_range"       value="0.8"/>
+	  <param name="min_y_range"       value="-0.8"/>
+	  <param name="max_y_range"       value="0.8"/>
 
 	  <param name="fixed_frame_id"   value="base_scan"/>
 	  <param name="target_frame_id"   value="base_scan"/>
@@ -37,13 +37,13 @@
 	  <param name="max_split_distance"   value="0.2"/>
 	  <param name="max_merge_separation" value="0.2"/>
 	  <param name="max_merge_spread"     value="0.2"/>
-	  <param name="max_circle_radius"    value="1"/>
+	  <param name="max_circle_radius"    value="0.4"/>
 	  <param name="radius_enlargement"   value="0.1"/>
 
 	  <param name="frame_id"             value="odom"/>
 	</node>
 
-	<node pkg="rf2o_laser_odometry" type="rf2o_laser_odometry_node" name="rf2o_laser_odometry" output="screen">
+	<!-- <node pkg="rf2o_laser_odometry" type="rf2o_laser_odometry_node" name="rf2o_laser_odometry" output="screen">
     <param name="laser_scan_topic" value="/front_scan"/>        # topic where the lidar scans are being published
     <param name="odom_topic" value="/odom_rf2o" />              # topic where tu publish the odometry estimations
     <param name="publish_tf" value="false" />                   # wheter or not to publish the tf::transform (base->odom)
@@ -52,7 +52,7 @@
     <param name="init_pose_from_topic" value="" /> # (Odom topic) Leave empty to start at point (0,0)
     <param name="freq" value="6.0"/>                            # Execution frequency.
     <param name="verbose" value="true" />                       # verbose
-  </node>
+  </node> -->
 
   <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_gazebo_rviz.launch"/>
 

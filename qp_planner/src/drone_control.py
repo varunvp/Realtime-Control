@@ -46,7 +46,7 @@ import qp_matrix
 global R
 global roll, pitch, yaw
 
-n = 4
+n = 15
 t = 0.1
 gps_rate = 0
 cont = 0
