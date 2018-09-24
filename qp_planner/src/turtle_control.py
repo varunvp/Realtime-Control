@@ -139,7 +139,7 @@ def main():
 
             if x == 'x':
                 sys.stdin.flush()
-                limit_x = float(raw_input('Enter x limit:'))
+                limits_x = float(raw_input('Enter x limit:'))
 
             if x == 'y':
                 sys.stdin.flush()
