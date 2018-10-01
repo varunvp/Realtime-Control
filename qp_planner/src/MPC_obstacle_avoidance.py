@@ -40,8 +40,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		ret_points {bool} -- Enable to return points in {variables}, under "points" (default: {False})
 		x_vel_limit {float} -- Linear velocity limit (default: {10000})
 		y_vel_limit {float} -- Angular velocity limit (default: {10000})
-		obstacles {list} -- List of obstacle specs [[x_obs], [y_obs], [obs_r]] (default: {None})
-		vehicle_r {float} -- Radius of vehicle (default: {0})
+		obstacles {list} -- List of obstacle specs [[x_obs], [y_obs], [r_obs]] (default: {None})
+		r_vehicle {float} -- Radius of vehicle (default: {0})
 	
 	Returns:
 		float -- Solution v1(0)
@@ -65,8 +65,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = obstacles[0]
 		y_obs = obstacles[1]
-		obs_r = obstacles[2]
-	vehicle_r = kwargs.pop("vehicle_r", 0)
+		r_obs = obstacles[2]
+		vx_obs = obstacles[3]
+		vy_obs = obstacles[4]
+
+	r_vehicle = kwargs.pop("r_vehicle", 0)
 
 	if(kwargs):
 		raise TypeError('Unexpected **kwargs: %r' % kwargs)
@@ -186,7 +189,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = np.subtract(x_destination, x_obs)
 		y_obs = np.subtract(y_destination, y_obs)
-		obs_r = np.add(obs_r, vehicle_r)
+		r_obs = np.add(r_obs, r_vehicle)
 		iterations = 0
 
 		while(d > 0.1 and iterations < 10):
@@ -210,33 +213,37 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
 				barrier_cons_B = np.zeros(nsteps)
 
-				x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j], y_obs[j], obs_r[j], nsteps)
+				# x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j], y_obs[j], r_obs[j], nsteps)
 
 				# for i in range(0, nsteps):
 				# dist = math.sqrt((x_in[0] - x_obs[j])**2 + (y_in[0] - y_obs[j])**2)
-				# x_proj[0] = x_obs[j] + obs_r[j] / dist * (x_in[0] - x_obs[j])
-				# y_proj[0] = y_obs[j] + obs_r[j] / dist * (y_in[0] - y_obs[j])
+				# x_proj[0] = x_obs[j] + r_obs[j] / dist * (x_in[0] - x_obs[j])
+				# y_proj[0] = y_obs[j] + r_obs[j] / dist * (y_in[0] - y_obs[j])
 
 				for i in range(1, nsteps):
+					prediction_time = - i * interval
+
+					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] + vx_obs * prediction_time, y_obs[j] + vy_obs * prediction_time, r_obs[j], nsteps)
+
 					#h = r**2 - x(i)**2 - y(i)**2
-					h = obs_r[j] **2 - (x_in[i] - x_obs[j])**2 - (y_in[i] - y_obs[j])**2
+					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] + vx_obs * prediction_time))**2 - (y_in[i] - (y_obs[j] + vy_obs * prediction_time))**2
 					#h_prev = r**2 - x(i-1)**2 - y(i-1)**2
-					h_prev = obs_r[j] **2 - (x_in[i-1] - x_obs[j])**2 - (y_in[i-1] - y_obs[j])**2
+					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] + vx_obs * prediction_time))**2 - (y_in[i-1] - (y_obs[j] + vy_obs * prediction_time))**2
 					gamma = 0.2
 
 					# dist = math.sqrt((x_in[i] - x_obs[j])**2 + (y_in[i] - y_obs[j])**2)
-					# x_proj[i] = x_obs[j] + obs_r[j] / dist * (x_in[i] - x_obs[j])
-					# y_proj[i] = y_obs[j] + obs_r[j] / dist * (y_in[i] - y_obs[j])
+					# x_proj[i] = x_obs[j] + r_obs[j] / dist * (x_in[i] - x_obs[j])
+					# y_proj[i] = y_obs[j] + r_obs[j] / dist * (y_in[i] - y_obs[j])
 
 					#Ai <= -2 * (x(i) - x_o)
-					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - x_obs[j])
+					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] + vx_obs * prediction_time))
 					#Ai <= -2 * (y(i) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - y_obs[j])
+					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] + vy_obs * prediction_time))
 					
 					#Ai <= gamma * 2 * (x(i-1) - x_o)
-					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - x_obs[j])
+					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] + vx_obs * prediction_time))
 					#Ai <= gamma * 2 * (y(i-1) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - y_obs[j])
+					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] + vy_obs * prediction_time))
 					# barrier_cons_B[i] = - h #- 0.9 * h0
 
 					#h(k+1) >= gamma * h(k)

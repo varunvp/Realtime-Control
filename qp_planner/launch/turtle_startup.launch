@@ -1,48 +1,64 @@
 <launch>
+	<arg name="launch_rviz" default="true"/>
 	<node name="scans_merger" pkg="obstacle_detector" type="scans_merger_node">
-	  <remap from="/scan" to="/front_scan"/>
+	    <remap from="/scan" to="/front_scan"/>
 
-	  <param name="active"            value="true"/>
-	  <param name="publish_scan"      value="true"/>
-	  <param name="publish_pcl"       value="true"/>
+	    <param name="active"            value="true"/>
+	    <param name="publish_scan"      value="true"/>
+	    <param name="publish_pcl"       value="true"/>
 
-	  <param name="ranges_num"        value="1000"/>
+	    <param name="ranges_num"        value="1000"/>
 
-	  <param name="min_scanner_range" value="0.05"/>
-	  <param name="max_scanner_range" value="1.0"/>
+	    <param name="min_scanner_range" value="0.05"/>
+	    <param name="max_scanner_range" value="8.0"/>
 
-	  <param name="min_x_range"       value="-0.8"/>
-	  <param name="max_x_range"       value="0.8"/>
-	  <param name="min_y_range"       value="-0.8"/>
-	  <param name="max_y_range"       value="0.8"/>
+	    <param name="min_x_range"       value="-8"/>
+	    <param name="max_x_range"       value="8"/>
+	    <param name="min_y_range"       value="-8"/>
+	    <param name="max_y_range"       value="8"/>
 
-	  <param name="fixed_frame_id"   value="base_scan"/>
-	  <param name="target_frame_id"   value="base_scan"/>
+	    <param name="fixed_frame_id"   value="base_scan"/>
+	    <param name="target_frame_id"   value="base_scan"/>
 	</node>
 
 	<node name="obstacle_extractor" pkg="obstacle_detector" type="obstacle_extractor_node">
-	  <param name="active"               value="true"/>
-	  <param name="use_scan"             value="false"/>
-	  <param name="use_pcl"              value="true"/>
+	    <param name="active"               value="true"/>
+	    <param name="use_scan"             value="false"/>
+	    <param name="use_pcl"              value="true"/>
 
-	  <param name="use_split_and_merge"    value="false"/>
-	  <param name="circles_from_visibles"  value="true"/>
-	  <param name="discard_converted_segments" value="true"/>
-	  <param name="transform_coordinates"  value="true"/>
+	    <param name="use_split_and_merge"    value="false"/>
+	    <param name="circles_from_visibles"  value="true"/>
+	    <param name="discard_converted_segments" value="true"/>
+	    <param name="transform_coordinates"  value="true"/>
 
-	  <param name="min_group_points"     value="5"/>
+	    <param name="min_group_points"     value="5"/>
 
-	  <param name="max_group_distance"   value="0.1"/>
-	  <param name="distance_proportion"  value="0.00628"/>
-	  <param name="max_split_distance"   value="0.2"/>
-	  <param name="max_merge_separation" value="0.2"/>
-	  <param name="max_merge_spread"     value="0.2"/>
-	  <param name="max_circle_radius"    value="0.4"/>
-	  <param name="radius_enlargement"   value="0.1"/>
+	    <param name="max_group_distance"   value="0.1"/>
+	    <param name="distance_proportion"  value="0.00628"/>
+	    <param name="max_split_distance"   value="0.2"/>
+	    <param name="max_merge_separation" value="0.2"/>
+	    <param name="max_merge_spread"     value="0.2"/>
+	    <param name="max_circle_radius"    value="0.4"/>
+	    <param name="radius_enlargement"   value="0.1"/>
 
-	  <param name="frame_id"             value="odom"/>
+	    <param name="frame_id"             value="odom"/>
 	</node>
 
+	<node name="obstacle_tracker" pkg="obstacle_detector" type="obstacle_tracker_node">
+	  <param name="active"                  value="true"/>
+
+	  <param name="loop_rate"               value="100.0"/>
+	  <param name="tracking_duration"       value="2.0"/>
+	  <param name="min_correspondence_cost" value="0.6"/>
+	  <param name="std_correspondence_dev"  value="0.15"/>
+	  <param name="process_variance"        value="0.1"/>  
+	  <param name="process_rate_variance"   value="0.1"/>  
+	  <param name="measurement_variance"    value="1.0"/> 
+
+	  <param name="frame_id"                value="odom"/>
+
+	  <remap from="tracked_obstacles" to="obstacles"/>
+	</node>
 	<!-- <node pkg="rf2o_laser_odometry" type="rf2o_laser_odometry_node" name="rf2o_laser_odometry" output="screen">
     <param name="laser_scan_topic" value="/front_scan"/>        # topic where the lidar scans are being published
     <param name="odom_topic" value="/odom_rf2o" />              # topic where tu publish the odometry estimations
@@ -54,7 +70,9 @@
     <param name="verbose" value="true" />                       # verbose
   </node> -->
 
-  <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_gazebo_rviz.launch"/>
+  	<group if="$(arg launch_rviz)">
+  		<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_gazebo_rviz.launch"/>
+  	</group>
 
-  <node name="mpc_control" pkg="qp_planner" type="turtle_control.py" output="screen" respawn="true" args="" />
+  <node name="mpc_control" pkg="qp_planner" type="turtle_control.py" output="screen" respawn="true"/>
 </launch>
