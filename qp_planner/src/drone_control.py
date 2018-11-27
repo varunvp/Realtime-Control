@@ -22,10 +22,9 @@ from sensor_msgs.msg import Joy
 from std_msgs.msg import Header, Float32, Float64, Empty
 from geometry_msgs.msg import PoseStamped, TwistStamped, Vector3, Quaternion, Point, Twist, PointStamped
 from subprocess import call
-from mavros_msgs.msg import OverrideRCIn
+import mavros_msgs.msg
 from mavros import command
 from mavros import setpoint as SP
-from mavros_msgs.msg import PositionTarget
 from nav_msgs.msg import Path, Odometry
 from visualization_msgs.msg import Marker
 
@@ -40,27 +39,29 @@ import numpy as np
 from numpy import array
 import math
 from qp_matrix import qp_q_dot_des_array
-from MPC import MPC_solver
+from MPC_obstacle_avoidance import MPC_solver
 import qp_matrix
+from qp_planner.msg import Obstacles
+
 
 global R
 global roll, pitch, yaw
 
-n = 15
-t = 0.1
+n = 20
+t = 0.5
 gps_rate = 0
 cont = 0
-home_xy_recorded = home_z_recorded = False
-cart_x = cart_y = cart_z = 0.0
-home_x = home_y = home_z = 0.0
+x_home_recorded = z_home_recorded = False
+x_current = y_current = z_current = 0.0
+x_home = y_home = z_home = 0.0
 ekf_x = ekf_y = ekf_z = 0
-desired_x = desired_y =  desired_z = 0.0
+x_destination = y_destination =  z_destination = 0.0
 limit_x = limit_y = limit_z = 10.
 roll = pitch = yaw = 0.0
 TIMEOUT = 0.5
 kp = 1.
 kb = 10000000.0
-home_yaw = 0
+y_homeyaw = 0
 br = tf.TransformBroadcaster()
 br2 = tf.TransformBroadcaster()
 y_pub = rospy.Publisher('y_graph', Float32, queue_size = 5)
@@ -72,6 +73,17 @@ quat.x = quat.y = quat.z = quat.w = 0
 start_y = 0.0
 timer = 0.0
 cached_var = {}
+height                                              = 3
+lin_vel_lim                                         = .2
+x_obs = y_obs = r_obs                               = [0.0]
+vx_obs                                              = [0.0]
+vy_obs                                              = [0.0]
+obstacles                                           = []
+r_vehicle                                           = 0.5
+final_pose                                          = [0, 0, 0]
+init_pose                                           = [0, 0, 0]
+current_pose                                        = [0, 0, 0]
+UAV_state                                           = mavros_msgs.msg.State()
 
 def imu_cb(data):
     global roll, pitch, yaw
@@ -81,45 +93,46 @@ def imu_cb(data):
     (roll, pitch, yaw) = (roll * 180.0/3.1416, pitch * 180.0/3.1416, yaw  * 180.0/3.1416)
 
 
-def gps_global_cb(data):
-    R = 6371000
-    lat = data.latitude
-    lon = data.longitude
-    alt = data.altitude
+def obstacles_cb(data):
+    global x_obs, y_obs, r_obs, obstacles, x_velocity_des, y_velocity_des
 
-    global cart_x, cart_y, cart_z, home_x, home_y, home_xy_recorded, discard_samples
+    if(data != None):
+        x_obs = np.array([obj.center.x for obj in data.circles])
+        y_obs = np.array([obj.center.y for obj in data.circles])
+        # Using + sign for subtraction because desired velocities are negated
+        # vx_obs = np.array([obj.velocity.x + (0 if x_velocity_des < 0.1 else x_velocity_des) for obj in data.circles])
+        # vy_obs = np.array([obj.velocity.y + (0 if y_velocity_des < 0.1 else y_velocity_des) for obj in data.circles])
+        vx_obs = np.array([obj.velocity.x + x_velocity_des for obj in data.circles])
+        vy_obs = np.array([obj.velocity.y + y_velocity_des for obj in data.circles])
+        # vx_obs = np.array([obj.velocity.x for obj in data.circles])
+        # vy_obs = np.array([obj.velocity.y for obj in data.circles])
 
-    cart_x = R * math.cos(lat) * math.cos(lon)
-    cart_y = R * math.cos(lat) * math.sin(lon)
-    # cart_z = R * math.sin(lat)
+        r_obs = np.array([obj.radius for obj in data.circles])
+        # if vx_obs[0] > 0:
+        #     vx_obs[0] = 0.5
 
-    if home_xy_recorded is False and cart_x != 0 and cart_y != 0:
-        home_x = cart_x
-        home_y = cart_y
-
-        discard_samples = discard_samples - 1
-
-        if(discard_samples <= 0):
-            home_xy_recorded = True
+        # else:
+        #     vx_obs[0] = -0.5
+        obstacles = [x_obs, y_obs, r_obs, np.zeros(len(x_obs)), np.zeros(len(x_obs))]
 
 
 def gps_local_cb(data):
-    global cart_x, cart_y, home_x, home_y, home_xy_recorded, discard_samples, desired_x, desired_y, start_y
+    global x_current, y_current, x_home, y_home, x_home_recorded, discard_samples, x_destination, y_destination, start_y
 
-    cart_x = data.pose.pose.position.x
-    cart_y = data.pose.pose.position.y
-    # cart_z = data.pose.pose.position.z
+    x_current = data.pose.pose.position.x
+    y_current = data.pose.pose.position.y
+    # z_current = data.pose.pose.position.z
 
-    if home_xy_recorded is False and cart_x != 0 and cart_y != 0:
-        home_x = cart_x
-        home_y = cart_y
+    if x_home_recorded is False and x_current != 0 and y_current != 0:
+        x_home = x_current
+        y_home = y_current
         discard_samples = discard_samples - 1
 
         if(discard_samples <= 0):
-            desired_x = cart_x                          #to set home position as initial desired position
-            desired_y = cart_y
-            start_y = home_y
-            home_xy_recorded = True
+            x_destination = x_current                          #to set home position as initial desired position
+            y_destination = y_current
+            start_y = y_home
+            x_home_recorded = True
 
 
 def pose_cb(data):
@@ -136,11 +149,13 @@ def pose_cb(data):
 
 
 def calc_target_cb(data):
-    global desired_x, desired_y, desired_z
-    desired_x = home_x + data.pose.position.x / 1
-    desired_y = home_y + data.pose.position.y / 1
-    # desired_z = home_z + data.pose.position.z
-
+    global x_destination, y_destination, z_destination, final_pose
+    print("Here")
+    x_destination = x_home + data.pose.position.x
+    y_destination = y_home + data.pose.position.y
+    # z_destination = z_home + data.pose.position.z
+    final_pose = [x_destination, y_destination, height]
+    print(final_pose)
 
 def twist_obj(x, y, z, a, b, c):
     # move_cmd = Twist()
@@ -153,44 +168,26 @@ def twist_obj(x, y, z, a, b, c):
     move_cmd.twist.angular.z = c
     return move_cmd
 
-
-def algomsg1(algo, command, speed, abs_speed, precedence, x, y, z, a, b, c):
-    cmd = algomsg(header=Header(stamp=rospy.get_rostime()))
-    cmd.algo = algo
-    cmd.command = command
-    cmd.speed = speed
-    cmd.abs_speed = abs_speed
-    cmd.precedence = precedence
-    cmd.cmd_custom = twist_obj(x, y, z, a, b, c)
-    return cmd
-
-
 def alt_cb(data):
-    global home_z, cart_z, home_z_recorded
-    cart_z = data.monotonic / 1
-
-
-def compact_algomsg(abs_speed, x, y, z, yaw):
-    algomsg1('Road-Following', 'custom', 0, abs_speed, 1, x, y, z, 0, 0, yaw)
-
+    global z_current
+    z_current = data.monotonic / 1
 
 def gazebo_cb(data):
-    global br
-    global cont,rate, pos, quat 
+    global pos, quat 
 
     pos = data.pose[1].position
     quat = data.pose[1].orientation
 
 
 def plot(vel_y):
-    global cart_y, desired_y, start_y
+    global y_current, y_destination, start_y
 
     timer = 0
 
     if(math.fabs(vel_y) >= 0.01):
         y_diff = Float32()
         try:
-            y = math.fabs((cart_y - start_y))/math.fabs((desired_y - start_y))
+            y = math.fabs((y_current - start_y))/math.fabs((y_destination - start_y))
             if(y < 2):
                 y_diff.data = y
                 y_pub.publish(y_diff)
@@ -198,24 +195,65 @@ def plot(vel_y):
         except ZeroDivisionError as e:
             print("Oops")
 
-        # print(cart_y - start_y,desired_y - start_y, start_y,y_diff.data)
+        # print(y_current - start_y,y_destination - start_y, start_y,y_diff.data)
 
     elif(math.fabs(vel_y) < 0.01):
-        start_y = desired_y
+        start_y = y_destination
 
         print("-------------------Ready-------------------")
 
+def _state_callback(topic):
+    UAV_state.armed = topic.armed
+    UAV_state.connected = topic.connected
+    UAV_state.mode = topic.mode
+    UAV_state.guided = topic.guided
+
+def _setpoint_position_callback(topic):
+    pass
 
 def main():
-    global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
-    global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer, cached_var
+    global x_home_recorded, z_home_recorded, x_current, y_current, z_current, x_destination, y_destination, z_destination, y_homeyaw, r_vehicle
+    global x_home, z_home, y_home, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer, cached_var, obstacles, final_pose, x_velocity_des,y_velocity_des
     xAnt = yAnt = 0
-    home_xy_recorded = False
+    x_home_recorded = False
     rospy.init_node('MAVROS_Listener')
     
     rate = rospy.Rate(100.0)
 
-    rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
+    # setup service
+    # /mavros/cmd/arming
+    set_arming = rospy.ServiceProxy('/mavros/cmd/arming', mavros_msgs.srv.CommandBool)
+    # /mavros/set_mode
+    set_mode = rospy.ServiceProxy('/mavros/set_mode', mavros_msgs.srv.SetMode)
+    setpoint_local_sub = rospy.Subscriber(mavros.get_topic('setpoint_raw', 'target_local'), mavros_msgs.msg.PositionTarget, _setpoint_position_callback)
+
+    setpoint_msg = mavros.setpoint.TwistStamped(
+        header=mavros.setpoint.Header(
+            frame_id="att_pose",
+            stamp=rospy.Time.now()),
+    )
+ 
+    # wait for FCU connection
+    # while (not (UAV_state.connected or rospy.is_shutdown())):
+    #     rate.sleep()
+ 
+    # initialize the setpoint
+    setpoint_msg.twist.linear.x = 0
+    setpoint_msg.twist.linear.y = 0
+    setpoint_msg.twist.linear.z = 0.1
+    mavros.set_namespace('/mavros')
+    mavros.command.arming(True)
+ 
+    # send 100 setpoints before starting
+    for i in range(0, 50):
+        pub1.publish(setpoint_msg)
+        rate.sleep()
+ 
+    set_mode(0, 'OFFBOARD')
+ 
+    last_request = rospy.Time.now()
+ 
+    # rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
     if(gps_rate == 0):
         rospy.Subscriber("/mavros/global_position/local", Odometry, gps_local_cb)
@@ -230,6 +268,7 @@ def main():
     rospy.Subscriber("/mavros/local_position/pose", PoseStamped, pose_cb)
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
     rospy.Subscriber("/gazebo/model_states", ModelStates, gazebo_cb)
+    rospy.Subscriber("/obstacles", Obstacles, obstacles_cb)
 
     pub = rospy.Publisher('destination_point', PointStamped, queue_size = 1)
     pub2 = rospy.Publisher('gps_point', PointStamped, queue_size = 5)
@@ -245,15 +284,26 @@ def main():
 
     # rospy.spin()
     while not rospy.is_shutdown():
+        if (UAV_state.mode != "OFFBOARD" and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
+            set_mode(0, 'OFFBOARD')
+            print("enabling offboard mode")
+            last_request = rospy.Time.now()
+        else:
+            if (not UAV_state.armed and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
+                if (mavros.command.arming(True)):
+                    print("Vehicle armed")
+                last_request = rospy.Time.now()
+ 
         timer = time.time()
 
     	yaw = 360.0 + yaw if yaw < 0 else yaw
 
-        if home_z_recorded is False and cart_z != 0 and yaw != 0:
-            desired_z = cart_z + 3
-            home_yaw = yaw
-            home_z = cart_z
-            home_z_recorded = True
+        if z_home_recorded is False and z_current != 0:
+            z_destination = z_current + height
+            # y_homeyaw = yaw
+            z_home = z_current
+            z_home_recorded = True
+            print(z_destination)
 
         ready = select.select([sys.stdin], [], [], 0)[0]
 
@@ -287,58 +337,80 @@ def main():
             sys.stdin.flush()
 
         # +90 To account for diff between world and drone frame
-        # desired_yaw = (math.atan2(desired_y - cart_y, desired_x - cart_x) * 180 / 3.1416)
-        # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
+        # y_destinationaw = (math.atan2(y_destination - y_current, x_destination - x_current) * 180 / 3.1416)
+        # y_destinationaw = 360.0 + y_destinationaw if y_destinationaw < 0 else y_destinationaw
 
+        # this is for controlling the turtle bot, mpc solver only yields paths in cartesian space.
+        dx = x_current - x_destination
+        dy = y_current - y_destination
+        dz = z_destination - z_current
+        current_pose = [dx, dy, dz]
+
+        # if(len(obstacles) > 0):
+        #     print(obstacles[0], obstacles[1])
+
+        try:
+            x_velocity_des, y_velocity_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles)
+
+        except ValueError:
+            x_velocity_des = 0
+            y_velocity_des = 0
+
+        x_array = cached_var.get("solution")[1:n+1]
+        y_array = cached_var.get("solution")[2 * n + 2:2 * n + 1 + n + 1]
+
+        z_velocity_des = kp * dz
         ################################ MPC ###################################
-        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, True, variables = cached_var, vel_limit = 3)
-        x_array = cached_var.get("points")
-        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = 3)
-        y_array = cached_var.get("points")
-        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, True, variables = cached_var, vel_limit = 3)
-        z_array = cached_var.get("points")
+        # x_velocity_des, cached_var = MPC_solver(x_current, x_destination, limit_x, x_home, n, t, True, variables = cached_var, vel_limit = 3)
+        # x_array = cached_var.get("points")
+        # y_velocity_des, cached_var = MPC_solver(y_current, y_destination, limit_y, y_home, n, t, True, variables = cached_var, vel_limit = 3)
+        # y_array = cached_var.get("points")
+        # z_velocity_des, cached_var = MPC_solver(z_current, z_destination, limit_z, z_home, n, t, True, variables = cached_var, vel_limit = 3)
+        # z_array = cached_var.get("points")
 
-        mpc_point_arr = np.transpose(np.row_stack((x_array, y_array, z_array)))
+        mpc_point_arr = np.transpose(np.row_stack((x_array, y_array)))
         # print(mpc_point_arr)
         ############################## QP Array ################################
-        # cart_array = [cart_x, cart_y, cart_z]
-        # des_array = [desired_x, desired_y, desired_z]
-        # origin_array = [home_x, home_y, home_z]
+        # cart_array = [x_current, y_current, z_current]
+        # des_array = [x_destination, y_destination, z_destination]
+        # origin_array = [x_home, y_home, z_home]
         # limit_array = [limit_x, limit_y, limit_z]
         # kp_array = [kp, kp, kp]
         # kb_array = [kb, kb, kb]
         # v_des = qp_q_dot_des_array(cart_array, des_array, origin_array, limit_array, kp_array, kb_array)
-        # velocity_x_des = v_des[0]
-        # velocity_y_des = v_des[1]
-        # velocity_z_des = v_des[2]
+        # x_velocity_des = v_des[0]
+        # y_velocity_des = v_des[1]
+        # z_velocity_des = v_des[2]
 
         ############################## Only QP #################################
-        # velocity_x_des = qp_matrix.qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb)
-        # velocity_y_des = qp_matrix.qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb)
-        # velocity_z_des = qp_matrix.qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb)
-        # velocity_yaw_des = -qp_q_dot_des(yaw, desired_yaw, home_yaw, 36000, 1000, 1000
+        # x_velocity_des = qp_matrix.qp_q_dot_des(x_current, x_destination, x_home, limit_x, kp, kb)
+        # y_velocity_des = qp_matrix.qp_q_dot_des(y_current, y_destination, y_home, limit_y, kp, kb)
+        # z_velocity_des = qp_matrix.qp_q_dot_des(z_current, z_destination, z_home, limit_z, kp, kb)
+        # velocity_yaw_des = -qp_q_dot_des(yaw, y_destinationaw, y_homeyaw, 36000, 1000, 1000
 
-        # velocity_x_des = velocity_x_des if math.fabs(velocity_x_des) < 2.5 else 2.5 * math.copysign(1, velocity_x_des)
-        # velocity_y_des = velocity_y_des if math.fabs(velocity_y_des) < 2.5 else 2.5 * math.copysign(1, velocity_y_des)
+        x_velocity_des = x_velocity_des if math.fabs(x_velocity_des) < lin_vel_lim else lin_vel_lim * math.copysign(1, x_velocity_des)
+        y_velocity_des = y_velocity_des if math.fabs(y_velocity_des) < lin_vel_lim else lin_vel_lim * math.copysign(1, y_velocity_des)
 
-        pub1.publish(twist_obj(velocity_x_des, velocity_y_des, velocity_z_des, 0.0, 0.0, 0.0))
+        pub1.publish(twist_obj(x_velocity_des, y_velocity_des, z_velocity_des, 0.0, 0.0, 0.0))
         
-        # print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
-        # print((cart_x - home_x), (cart_y - home_y), desired_x - home_x, desired_y - home_y)
-        # print(desired_x, desired_y)
+        # if(len(obstacles) > 0):
+        #     print(current_pose, obstacles[0], obstacles[1])
+        # print (x_current, y_current, z_current, current_pose, x_velocity_des, y_velocity_des, z_velocity_des)
+        # print((x_current - x_home), (y_current - y_home), x_destination - x_home, y_destination - y_home)
+        # print(x_destination, y_destination)
 
         desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         desired_point.header.frame_id = 'local_origin'
-        desired_point.point.x = desired_x - home_x
-        desired_point.point.y = desired_y - home_y
+        desired_point.point.x = x_destination - x_home
+        desired_point.point.y = y_destination - y_home
         desired_point.point.z = 0
         pub.publish(desired_point)
 
         gps_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         gps_point.header.frame_id = 'local_origin'
-        gps_point.point.x = (cart_x - home_x)
-        gps_point.point.y = (cart_y - home_y)
-        gps_point.point.z = (cart_z - home_z)
+        gps_point.point.x = (x_current - x_home)
+        gps_point.point.y = (y_current - y_home)
+        gps_point.point.z = (z_current - z_home)
         pub2.publish(gps_point)
 
         ekf_pose = PoseStamped()
@@ -362,7 +434,7 @@ def main():
         boundary_cube.color.b = 0
         pub3.publish(boundary_cube)
 
-        # plot(velocity_y_des)
+        # plot(y_velocity_des)
 
         pose = PoseStamped()
         pose.header.frame_id = "local_origin"
@@ -377,9 +449,9 @@ def main():
                 mpc_pose.header.seq = i
                 mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
                 mpc_pose.header.frame_id = "local_origin"
-                mpc_pose.pose.position.x = mpc_point_arr[i][0] + desired_x - home_x
-                mpc_pose.pose.position.y = mpc_point_arr[i][1] + desired_y - home_y
-                mpc_pose.pose.position.z = mpc_point_arr[i][2] + desired_z - home_z
+                mpc_pose.pose.position.x = mpc_point_arr[i][0] + x_destination - x_home
+                mpc_pose.pose.position.y = mpc_point_arr[i][1] + y_destination - y_home
+                mpc_pose.pose.position.z = height
                 mpc_pose_array[i] = mpc_pose
 
         if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
@@ -412,7 +484,7 @@ def main():
                 ekf_path.poses.pop(0)
 
         br.sendTransform((pos.x, pos.y, pos.z), (quat.x, quat.y, quat.z, quat.w), rospy.Time.now(), "base_link", "local_origin")
-        br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "fcu", "local_origin")
+        br2.sendTransform((pos.x, pos.y, pos.z), (0, 0, 0, 1), rospy.Time.now(), "base_scan", "local_origin")
 
         
 if __name__ == "__main__":

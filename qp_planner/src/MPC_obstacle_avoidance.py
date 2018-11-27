@@ -181,14 +181,17 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# print(np.shape(big_A_eq))
 	# print(np.shape(big_b_eq))
 
-	#Obstacle fre path
+	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
 
 	traj = u_in
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
-		x_obs = np.subtract(x_destination, x_obs)
-		y_obs = np.subtract(y_destination, y_obs)
+		x_obs = -np.subtract(x_destination, x_obs)
+		y_obs = -np.subtract(y_destination, y_obs)
+		# print()
+		# vx_obs = np.add(vx_obs, traj[nsteps+1])
+		# vy_obs = np.add(vy_obs, traj[3 * nsteps + 2])
 		r_obs = np.add(r_obs, r_vehicle)
 		iterations = 0
 
@@ -223,12 +226,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				for i in range(1, nsteps):
 					prediction_time = - i * interval
 
-					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] + vx_obs * prediction_time, y_obs[j] + vy_obs * prediction_time, r_obs[j], nsteps)
+					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] + vx_obs[j] * prediction_time, y_obs[j] + vy_obs[j] * prediction_time, r_obs[j], nsteps)
 
 					#h = r**2 - x(i)**2 - y(i)**2
-					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] + vx_obs * prediction_time))**2 - (y_in[i] - (y_obs[j] + vy_obs * prediction_time))**2
+					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] + vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] + vy_obs[j] * prediction_time))**2
 					#h_prev = r**2 - x(i-1)**2 - y(i-1)**2
-					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] + vx_obs * prediction_time))**2 - (y_in[i-1] - (y_obs[j] + vy_obs * prediction_time))**2
+					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] + vx_obs[j] * prediction_time))**2 - (y_in[i-1] - (y_obs[j] + vy_obs[j] * prediction_time))**2
 					gamma = 0.2
 
 					# dist = math.sqrt((x_in[i] - x_obs[j])**2 + (y_in[i] - y_obs[j])**2)
@@ -236,14 +239,14 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					# y_proj[i] = y_obs[j] + r_obs[j] / dist * (y_in[i] - y_obs[j])
 
 					#Ai <= -2 * (x(i) - x_o)
-					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] + vx_obs * prediction_time))
+					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] + vx_obs[j] * prediction_time))
 					#Ai <= -2 * (y(i) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] + vy_obs * prediction_time))
+					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] + vy_obs[j] * prediction_time))
 					
 					#Ai <= gamma * 2 * (x(i-1) - x_o)
-					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] + vx_obs * prediction_time))
+					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] + vx_obs[j] * prediction_time))
 					#Ai <= gamma * 2 * (y(i-1) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] + vy_obs * prediction_time))
+					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] + vy_obs[j] * prediction_time))
 					# barrier_cons_B[i] = - h #- 0.9 * h0
 
 					#h(k+1) >= gamma * h(k)

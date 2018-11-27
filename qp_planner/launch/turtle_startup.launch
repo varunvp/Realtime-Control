@@ -74,5 +74,5 @@
   		<include file="$(find turtlebot3_gazebo)/launch/turtlebot3_gazebo_rviz.launch"/>
   	</group>
 
-  <node name="mpc_control" pkg="qp_planner" type="turtle_control.py" output="screen" respawn="true"/>
+  <node name="mpc_control" pkg="qp_planner" type="turtle_control.py" output="screen" respawn="false"/>
 </launch>
