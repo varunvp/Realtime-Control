@@ -16,9 +16,10 @@ from qp_planner.msg import algomsg
 from qp_planner.msg import Obstacles
 
 x_current = y_current = current_yaw                 = 0.0
-x_destination = y_destination = destination_yaw     = 0.0
+x_destination = y_destination                       = 0.0
+destination_yaw                                     = 0.1
 x_velocity_des = y_velocity_des                     = 0.0 
-final_pose                                          = [0, 0, 0]
+final_pose                                          = [0.01, 0.01, 0.01]
 init_pose                                           = [0, 0, 0]
 current_pose                                        = [0, 0, 0]
 y_home =  y_homeyaw                                 = 0
@@ -48,6 +49,8 @@ counter                                             = 0
 max_time                                            = 0.
 min_time                                            = 1000.
 total_time                                          = 0.
+
+theta_destination                                   = 0.1
 global main_thread, debug, debug2, x_velocity_des, y_velocity_des
 
 class form_object(npyscreen.Form):
@@ -87,7 +90,7 @@ def calc_target_cb(data):
     orientation_q = data.pose.orientation
     orientation_list = (orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w)
     (roll, pitch, theta_destination) = euler_from_quaternion(orientation_list)
-    final_pose = [x_destination,  y_destination, 0]
+    final_pose = [x_destination,  y_destination, theta_destination]
 
 #To check for battery voltage of the Turtlebot
 def batt_voltage_cb(data):
@@ -144,6 +147,8 @@ def main():
     pub4 = rospy.Publisher('mpc_path', Path, queue_size=1)
     pub5 = rospy.Publisher('turtle_point', PointStamped, queue_size = 1)
     pub7 = rospy.Publisher('predicted_path', Path, queue_size = 1)
+    pub8 = rospy.Publisher('v', Float64, queue_size = 5)
+    pub9 = rospy.Publisher('omega', Float64, queue_size = 5)
 
     mpc_path = Path()
     obs_path = Path()
@@ -234,8 +239,10 @@ def main():
         # else:
         #     velocity_yaw_des = np.clip(destination_yaw - current_yaw, -ang_vel_lim, ang_vel_lim);
         
-        final_pose[2] = math.degrees(math.atan2(final_pose[1] - current_pose[1], final_pose[0] - current_pose[0]))
+        # final_pose[2] = math.degrees(math.atan2(final_pose[1] - current_pose[1], final_pose[0] - current_pose[0]))
         v, omega = qp_non_holonomic_solver(current_pose, final_pose, [x_obs[0], y_obs[0], r_obs[0]], 1.5, 1.5)
+        pub8.publish(Float64(v))
+        pub9.publish(Float64(omega))
         v = np.clip(v, -.2, .2)
         omega = np.clip(omega, -1, 1)
 

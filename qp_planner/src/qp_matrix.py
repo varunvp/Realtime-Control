@@ -3,7 +3,7 @@ import quadprog, math
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
-from math import sin, cos, radians, degrees
+from math import sin, cos, radians, degrees, sqrt
 
 def quadprog_solve_qp(H, h, A=None, b=None, C=None, d=None):
     qp_H = .5 * (H + H.T)  # make sure H is symmetric
@@ -132,8 +132,10 @@ def qp_non_holonomic_solver(act, des, obs, kp, kb):
     # Va[1] = - sin(radians(des[2] - act[2])) / kp
 
     # # safety constraints
+    # Va[0] = ((des[0] - act[0]) * cos(radians(act[2])) + (des[1] - act[1]) * sin(radians(act[2])))
+    # Va[1] = sin(radians(des[2] - act[2]))
     # Vb[0] = - 0.5 * ((des[0] - act[0]) ** 2 + (des[1] - act[1]) ** 2)
-    # Vb[1] = - ((1 - cos(radians(des[2] - act[2]))) / kp)
+    # Vb[1] = - (1 - cos(radians(des[2] - act[2])))
 
     # # inequality constraints are given here Au <= b
     # Ba[0] = ((act[0] - obs[0]) * cos(radians(des[2] - act[2])) + (act[1] - obs[1]) * sin(radians(des[2] - act[2])))
@@ -144,13 +146,16 @@ def qp_non_holonomic_solver(act, des, obs, kp, kb):
     # A = np.array([[-1, Va[0], Va[1]], [0, -Ba[0], -Ba[1]]])
     # b = np.array([(Vb[0] + Vb[1]) * 0.01, (-Bb[0] + (-Bb[1]))])
 
-    # stability constraints
-    Va[0] = - 2 * ((des[0] - act[0]) * cos(radians(act[2])) + (des[1] - act[1]) * sin(radians(act[2])))
-    Va[1] = - sin(radians(des[2] - act[2]))#- 2 * (des[2] - act[2])
-
-    # safety constraints
-    Vb[0] = - kp * ((des[0] - act[0]) ** 2 + (des[1] - act[1]) ** 2)
-    Vb[1] = - kp * (1- cos(radians(des[2] - act[2]))) #(des[2] - act[2]) ** 2
+    e_sq = (des[0] - act[0]) ** 2 + (des[1] - act[1]) ** 2 + 1e-8
+    #V dot
+    Va[0] = - sqrt(e_sq) * cos(radians(des[2] - act[2])) + sin(radians(des[2] - act[2])) * ((des[2] - act[2]) + 1 * des[2]) / (sqrt(e_sq))
+    Va[1] = - (des[2] - act[2]) #- 2 * (des[2] - act[2])
+    print des[2], act[2]
+    # V
+    # Vb[0] = - kp * (cos(radians((des[2] - act[2]))) ** 2 * e_sq)
+    # Vb[1] = - kp * ((des[2] - act[2]) ** 2) #(des[2] - act[2]) ** 2
+    Vb[0] = - kp * 0.5 * e_sq
+    Vb[1] = - kp * ((des[2] - act[2]) ** 2) * (.5 + .5 * (des[2]/(des[2] - act[2])) ** 2)
 
     # inequality constraints are given here Au <= b
     Ba[0] = 0 * ((act[0] - obs[0]) * cos(radians(des[2] - act[2])) + (act[1] - obs[1]) * sin(radians(des[2] - act[2])))
@@ -158,13 +163,13 @@ def qp_non_holonomic_solver(act, des, obs, kp, kb):
     Ba[1] = 0
     Bb[1] = 0
 
-    A = np.array([[-1, Va[0], 0], [-1, 0, Va[1]], [0, -Ba[0], -Ba[1]]])
-    b = np.array([Vb[0], Vb[1], - Bb[0] + (-Bb[1])])
+    A = np.array([[-1, Va[0], Va[1]], [0, -Ba[0], -Ba[1]]])
+    b = np.array([Vb[0] + Vb[1], - Bb[0] + (-Bb[1])])
 
 
     u_in = quadprog_solve_qp(H, h, A, b)
 
-    print(u_in[0])
+    # print(u_in[0])
     if __name__ == "__main__":
         print A
         print b
@@ -183,8 +188,8 @@ if __name__ == "__main__":
 
     # qp_q_dot_des_array(actual, desired, origin, limit, kp, kb)
     
-    act = [5.268, -3.84, -42]
-    des = [1.487, 0, 0.]
+    act = [0., 0., 45.]
+    des = [10., 10., -45.]
     obs = [0, 0, 0.]
     kp = 1
     kb = 10

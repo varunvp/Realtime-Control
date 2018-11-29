@@ -1,0 +1,1740 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"pa",
+				"parentApp\tstatement"
+			],
+			[
+				"exit",
+				"exit_form"
+			],
+			[
+				"add",
+				"addItem\tfunction"
+			],
+			[
+				"Forme",
+				"FormWithMenus\tclass"
+			],
+			[
+				"edit",
+				"editw\tparam"
+			],
+			[
+				"noti",
+				"notify_confirm\tfunction"
+			],
+			[
+				"exi",
+				"exiting\tstatement"
+			],
+			[
+				"form",
+				"form_object\tclass"
+			],
+			[
+				"npsa",
+				"NPSAppManaged\tclass"
+			],
+			[
+				"fo",
+				"Form\tclass"
+			],
+			[
+				"wra",
+				"wrapper_basic\tfunction"
+			],
+			[
+				"vy",
+				"vy_obs\tstatement"
+			],
+			[
+				"lin",
+				"lin_vel_lim\tstatement"
+			],
+			[
+				"obsp",
+				"obs_pose_array"
+			],
+			[
+				"obs_",
+				"obs_path\tstatement"
+			],
+			[
+				"pu",
+				"publish"
+			],
+			[
+				"obs_pose",
+				"obs_pose_array"
+			],
+			[
+				"obs",
+				"obs_pose\tstatement"
+			],
+			[
+				"x",
+				"x_current\tstatement"
+			],
+			[
+				"lo",
+				"local_origin"
+			],
+			[
+				"du",
+				"Duration"
+			],
+			[
+				"la",
+				"launch_rviz"
+			],
+			[
+				"pre",
+				"prediction_time\tstatement"
+			],
+			[
+				"pos",
+				"poses"
+			],
+			[
+				"re",
+				"read"
+			],
+			[
+				"po",
+				"pose"
+			],
+			[
+				"Model",
+				"ModelState"
+			],
+			[
+				"qu",
+				"queue_size"
+			],
+			[
+				"MO",
+				"ModelState\tmodule"
+			],
+			[
+				"obsta",
+				"obstacle\tstatement"
+			],
+			[
+				"min",
+				"min_time\tstatement"
+			],
+			[
+				"max",
+				"max_time\tstatement"
+			],
+			[
+				"cur",
+				"current_time\tstatement"
+			],
+			[
+				"curr",
+				"current_time\tstatement"
+			],
+			[
+				"fina",
+				"final_pose\tparam"
+			],
+			[
+				"init_",
+				"init_pose\tparam"
+			],
+			[
+				"dst",
+				"destination"
+			],
+			[
+				"curre",
+				"current_pose\tstatement"
+			],
+			[
+				"init",
+				"initial_pose\tstatement"
+			],
+			[
+				"destina",
+				"destination"
+			],
+			[
+				"di",
+				"dist\tstatement"
+			],
+			[
+				"xo",
+				"x_obs\tparam"
+			],
+			[
+				"pro",
+				"project_to_obstacles\tfunction"
+			],
+			[
+				"x_ve",
+				"x_vel_limit"
+			],
+			[
+				"barr",
+				"barrier_cons_B\tstatement"
+			],
+			[
+				"dest",
+				"destination_yaw\tstatement"
+			],
+			[
+				"iss",
+				"is_simulation"
+			],
+			[
+				"desti",
+				"destination_y\tstatement"
+			],
+			[
+				"velo",
+				"velocity_yaw_des"
+			],
+			[
+				"front",
+				"front_scan_received_"
+			],
+			[
+				"fro",
+				"front_scan_sub_"
+			],
+			[
+				"km",
+				"KMeans\tclass"
+			],
+			[
+				"dets",
+				"destination_yaw\tstatement"
+			],
+			[
+				"scale",
+				"scale_factor\tstatement"
+			],
+			[
+				"sac",
+				"scale_factor\tstatement"
+			],
+			[
+				"sca",
+				"scale_factor\tstatement"
+			],
+			[
+				"disp",
+				"disp_obs_x\tstatement"
+			],
+			[
+				"rdes",
+				"r_destination\tparam"
+			],
+			[
+				"va",
+				"variables"
+			],
+			[
+				"bigba",
+				"big_barrier_cons_A\tstatement"
+			],
+			[
+				"bigbar",
+				"big_barrier_cons_B\tstatement"
+			],
+			[
+				"bigbb",
+				"big_Bb_ineq\tstatement"
+			],
+			[
+				"Bin",
+				"B_ineq_d"
+			],
+			[
+				"bigb",
+				"big_Ba_ineq\tstatement"
+			],
+			[
+				"em",
+				"empty\tfunction"
+			],
+			[
+				"tdes",
+				"t_destination\tparam"
+			],
+			[
+				"t_des",
+				"t_destination\tparam"
+			],
+			[
+				"r_des",
+				"r_destination\tparam"
+			],
+			[
+				"r_",
+				"r_destination\tparam"
+			],
+			[
+				"veloc",
+				"velocity_yaw_des\tstatement"
+			],
+			[
+				"vlo",
+				"velocity_y_des"
+			],
+			[
+				"vel",
+				"velocity_x_des\tstatement"
+			],
+			[
+				"limi",
+				"limit_y\tstatement"
+			],
+			[
+				"ya",
+				"y_arr\tstatement"
+			],
+			[
+				"xar",
+				"x_arr\tstatement"
+			],
+			[
+				"big",
+				"big_Ba_ineq\tstatement"
+			],
+			[
+				"bineq",
+				"B_ineq_d\tstatement"
+			],
+			[
+				"ret",
+				"ret_points"
+			],
+			[
+				"ang",
+				"ang_vel_limit"
+			],
+			[
+				"uin",
+				"u_in\tstatement"
+			],
+			[
+				"lim",
+				"lin_vel_lim\tstatement"
+			],
+			[
+				"home",
+				"home_x\tstatement"
+			],
+			[
+				"ho",
+				"home_yaw\tstatement"
+			],
+			[
+				"MPC_",
+				"MPC_obstacle_avoidance\tmodule"
+			],
+			[
+				"theta_b",
+				"theta_Bb_ineq"
+			],
+			[
+				"thet",
+				"theta_vel_constraints\tstatement"
+			],
+			[
+				"t_",
+				"t_desired\tparam"
+			],
+			[
+				"th",
+				"theta_b_eq\tstatement"
+			],
+			[
+				"neg",
+				"neg_theta_vel_constraint\tstatement"
+			],
+			[
+				"r_a",
+				"r_A_eq\tstatement"
+			],
+			[
+				"matri",
+				"matrix_rank\tfunction"
+			],
+			[
+				"nd",
+				"ndim\tfunction"
+			],
+			[
+				"des",
+				"destination_yaw\tstatement"
+			],
+			[
+				"co",
+				"cos\tfunction"
+			],
+			[
+				"ata",
+				"atan\tfunction"
+			],
+			[
+				"li",
+				"limit_x\tstatement"
+			],
+			[
+				"bib",
+				"big_Bb_ineq\tstatement"
+			],
+			[
+				"t",
+				"t_current_yaw\tstatement"
+			],
+			[
+				"cu",
+				"current_yaw\tstatement"
+			],
+			[
+				"desi",
+				"desired_yaw\tstatement"
+			],
+			[
+				"desired",
+				"desired_yaw\tstatement"
+			],
+			[
+				"1",
+				"1416"
+			],
+			[
+				"desire",
+				"desired_yaw\tstatement"
+			],
+			[
+				"yaw",
+				"velocity_yaw_des"
+			],
+			[
+				"desir",
+				"desired_yaw\tstatement"
+			],
+			[
+				"ve",
+				"velocity_yaw_des"
+			],
+			[
+				"ca",
+				"cached_var\tstatement"
+			],
+			[
+				"hom",
+				"home_y\tstatement"
+			],
+			[
+				"desired_y",
+				"desired_yaw\tstatement"
+			],
+			[
+				"od",
+				"odom_cb\tfunction"
+			],
+			[
+				"mp",
+				"mpc_point_arr\tstatement"
+			],
+			[
+				"deis",
+				"desired_y\tstatement"
+			],
+			[
+				"mpc",
+				"mpc_path\tstatement"
+			],
+			[
+				"pub",
+				"pub6\tstatement"
+			],
+			[
+				"mpc_pos",
+				"mpc_pose_array\tstatement"
+			],
+			[
+				"MPC",
+				"mpc_pose\tstatement"
+			],
+			[
+				"tr",
+				"True\tkeyword"
+			],
+			[
+				"z",
+				"z_array\tstatement"
+			],
+			[
+				"Y",
+				"y_array\tstatement"
+			],
+			[
+				"bi",
+				"big_h"
+			],
+			[
+				"nste",
+				"nsteps\tparam"
+			],
+			[
+				"del",
+				"delta\tstatement"
+			],
+			[
+				"big_a",
+				"big_A_eq\tstatement"
+			],
+			[
+				"prev_",
+				"prev_interval"
+			],
+			[
+				"dyn",
+				"dyn_b\tstatement"
+			],
+			[
+				"bigA",
+				"big_A_eq\tstatement"
+			],
+			[
+				"ter",
+				"term_b"
+			],
+			[
+				"dy",
+				"dyn_A"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "qp_planner/src/MPC_obstacle_avoidance.py",
+			"settings":
+			{
+				"buffer_size": 11179,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "qp_planner/src/turtle_control.py",
+			"settings":
+			{
+				"buffer_size": 11879,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "qp_planner/src/npyscreen_test.py",
+			"settings":
+			{
+				"buffer_size": 1725,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/varun/catkin_ws/src/turtlebot3/turtlebot3_description/urdf/turtlebot3_burger.gazebo.xacro",
+			"settings":
+			{
+				"buffer_size": 3864,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/User/CMake.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/C++/C++ Single File.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"DroneCore Run"
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"Gazebo Run"
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				],
+				[
+					"Packages/User/URDF check.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				"DroneCore Run"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				"Run"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/C++/C++ Single File.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/DroneCoreExecute.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/DroneCoreExecute.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/User/C++Execute.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		]
+	],
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"python\" -u \"$file\""
+		}
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"stat",
+				"git: status"
+			],
+			[
+				"git",
+				"git: status"
+			],
+			[
+				"git s",
+				"git: status"
+			],
+			[
+				"remote",
+				"git: remote add"
+			],
+			[
+				"git sta",
+				"git: status"
+			],
+			[
+				"dis",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"disa",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"git stat",
+				"git: status"
+			],
+			[
+				"git remote",
+				"github: set remote for integration"
+			],
+			[
+				"git add",
+				"git: remote add"
+			],
+			[
+				"git pu",
+				"git: push"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"git remot",
+				"git: remote add"
+			],
+			[
+				"git fe",
+				"git: fetch"
+			],
+			[
+				"git st",
+				"git: status"
+			],
+			[
+				"gitsa",
+				"GitSavvy: help"
+			],
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"lint",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"in",
+				"Package Control: Install Package"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"easy",
+				"EasyClangComplete: Open completion triggers location"
+			],
+			[
+				"pac",
+				"Package Control: Remove Package"
+			]
+		],
+		"width": 461.0
+	},
+	"console":
+	{
+		"height": 127.0,
+		"history":
+		[
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock)",
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(\"/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock\")",
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/nodes.launch",
+		"/home/varun/mavros_ws/src/qp_planner/launch/turtle_startup.launch",
+		"/home/varun/gazebo_plugins/object_motions/mpc_obstacles/ping_pong.cpp",
+		"/home/varun/catkin_ws/src/turtlebot3/turtlebot3_description/urdf/turtlebot3_burger.urdf.xacro",
+		"/home/varun/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/launch/turtlebot3_empty_world.launch",
+		"/home/varun/src/Firmware/launch/single_raven_spawn.launch",
+		"/home/varun/src/Firmware/launch/posix_sitl.launch",
+		"/home/varun/src/Firmware/launch/single_vehcile_spawn_2.launch",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/iris.xacro",
+		"/home/varun/src/Firmware/launch/single_vehcile_spawn.launch",
+		"/home/varun/Firmware backup/launch/multi_uav_mavros_sitl.launch",
+		"/home/varun/src/Firmware/launch/mavros.launch",
+		"/home/varun/src/Firmware/launch/raven_test.launch",
+		"/home/varun/old_firmware/src/px4-firmware/launch/single_vehicle_spawn.launch",
+		"/home/varun/mavros_ws/src/qp_planner/msg/CircleObstacle.msg",
+		"/home/varun/boost_1_58_0/bootstrap.sh",
+		"/home/varun/mavros_ws/src/qp_planner/src/turtle_control.py",
+		"/home/varun/gazebo_plugins/object_motions/mpc_obstacles/CMakeLists.txt",
+		"/home/varun/.bashrc",
+		"/home/varun/gazebo_plugins/object_motions/simple_robot_description/src/ellipse_equation.cpp",
+		"/media/varun/UBUNTU 16_0/LaunchSinglePX4.sh",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/iris_base.xacro",
+		"/home/varun/gazebo_plugins/tutorial/model_push.cc",
+		"/home/varun/model_editor_models/target_sphere/model.sdf",
+		"/home/varun/model_editor_models/moving_obstacle/model.sdf",
+		"/home/varun/catkin_ws/logs/obstacle_detector/build.make.003.log",
+		"/home/varun/mavros_ws/src/qp_planner/msg/Obstacles.msg",
+		"/home/varun/mavros_ws/src/qp_planner/src/planner.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/drone_control.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC_obstacle_avoidance.py",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/component_snippets.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven_base.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven_base.urdf",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/multirotor_base.xacro",
+		"/home/varun/src/Firmware/LaunchRaven.sh",
+		"/home/varun/src/Firmware/LaunchSinglePX4.sh",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven.xacro",
+		"/opt/ros/indigo/env.sh",
+		"/home/varun/catkin_ws/src/urdf_example/launch/gazebo.launch",
+		"/home/varun/catkin_ws/src/urdf_example/robots/urdf_example.urdf",
+		"/home/varun/catkin_ws/src/PythonRobotics/Mapping/kmeans_clustering/kmeans_clustering.py",
+		"/home/varun/mount_disks.sh",
+		"/home/varun/InstallApps.sh",
+		"/home/varun/catkin_ws/src/urdf_example/package.xml",
+		"/home/varun/catkin_ws/src/URDF Example/package.xml",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/panels/scans_merger_panel.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/panels/obstacle_extractor_panel.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/panels/obstacle_tracker_panel.cpp",
+		"/home/varun/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/rviz/turtlebot3_gazebo_model.rviz",
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/nodelets.launch",
+		"/home/varun/Downloads/redeclipse-1.6.0/redeclipse.sh",
+		"/home/varun/mavlink_send.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/qp_matrix.py",
+		"/home/varun/.turtlebot_launch",
+		"/home/varun/src/Firmware/LaunchTask1Arena.sh",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC.py",
+		"/home/varun/src/Firmware/launch/task_1_arena.launch",
+		"/home/varun/mavros_ws/src/rf2o_laser_odometry/launch/rf2o_laser_odometry.launch",
+		"/home/varun/install-python.sh",
+		"/home/varun/MBZIRC_Arena/Task1Arena.world",
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/demo.launch",
+		"/home/varun/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/launch/turtlebot3_gazebo_rviz.launch",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/scans_merger.cpp",
+		"/home/varun/mavros_ws/src/qp_planner/src/obstacle_scan.py",
+		"/home/varun/catkin_ws/src/point-cloud-clusters/src/sensor_stick/src/cloud_transformer.cpp",
+		"/home/varun/catkin_ws/src/turtlebot3/turtlebot3_bringup/launch/includes/description.launch.xml",
+		"/home/varun/catkin_ws/src/turtlebot3/turtlebot3_bringup/launch/turtlebot3_remote.launch",
+		"/home/varun/catkin_ws/src/PCL-ROS-cluster-Segmentation/package.xml",
+		"/home/varun/mavros_ws/src/qp_planner/src/odom_to_path.py",
+		"/home/varun/mavros_ws/src/DroneControl.sublime-project",
+		"/home/varun/.config/sublime-text-3/Packages/User/CMake Compile.sublime-build",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC.pyc",
+		"/home/varun/mavros_ws/src/.git/hooks/commit-msg.sample",
+		"/home/varun/px4airsim.sh",
+		"/home/varun/mavros_ws/src/qp_planner/src/qp_control.py",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/src/gazebo_motor_model.cpp",
+		"/home/varun/DroneCore/DroneCore/example/multi_drone_control/multi_drone_control.cpp",
+		"/home/varun/DroneCore/DroneCore/example/keyboard_test/keyboard_test.cpp",
+		"/home/varun/src/Firmware/posix-configs/SITL/init/ekf2/iris_1",
+		"/home/varun/src/Firmware/posix-configs/SITL/init/ekf2/iris",
+		"/home/varun/DroneCore/DroneCore/example/takeoff_land/takeoff_and_land.cpp",
+		"/home/varun/DroneCore/DroneCore/plugins/offboard/offboard_impl.cpp",
+		"/home/varun/DroneCore/DroneCore/plugins/offboard/offboard.cpp",
+		"/media/varun/AA4E3FD94E3F9D4F/Firmware/launch/posix_sitl.launch",
+		"/media/varun/AA4E3FD94E3F9D4F/Firmware/launch/single_vehicle_spawn.launch",
+		"/home/varun/.config/sublime-text-3/Packages/User/CMake.sublime-build",
+		"/home/varun/DroneCore/DroneCore/core/dronecore_impl.cpp",
+		"/home/varun/DroneCore/DroneCore/plugins/telemetry/telemetry.cpp",
+		"/home/varun/DroneCore/DroneCore/core/dronecore.cpp",
+		"/home/varun/DroneCore/DroneCore/example/multi_drone_control/CMakeLists.txt",
+		"/home/varun/src/Firmware/launch/multi_uav_mavros_sitl.launch",
+		"/opt/ros/indigo/share/urdf_tutorial/urdf/08-macroed.urdf.xacro",
+		"/home/varun/DroneCore/DroneCore/example/offboard_velocity/offboard_velocity.cpp",
+		"/home/varun/gazebo_animatedbox_tutorial/animated_sphere.cc",
+		"/home/varun/DroneCore/DroneCore/example/takeoff_land/CMakeLists.txt",
+		"/home/varun/DroneCore/DroneCore/example/offboard_velocity/Makefile",
+		"/home/varun/DroneCore/DroneCore/core/CMakeLists.txt",
+		"/home/varun/DroneCore/DroneCore/example/keyboard_test/CMakeLists.txt",
+		"/home/varun/DroneCore/DroneCore/example/offboard_velocity/CMakeLists.txt",
+		"/home/varun/DroneCore/DroneCore/core/udp_connection.cpp",
+		"/home/varun/DroneCore/DroneCore/core/mavlink_parameters.cpp",
+		"/home/varun/DroneCore/DroneCore/core/mavlink_commands.cpp",
+		"/home/varun/DroneCore/DroneCore/core/device_impl.cpp",
+		"/home/varun/DroneCore/DroneCore/plugins/follow_me/follow_me_impl.cpp",
+		"/home/varun/DroneCore/DroneCore/core/mavlink_commands.h",
+		"/home/varun/DroneCore/DroneCore/libs/include/mavlink/v2.0/common/mavlink_msg_autopilot_version.h",
+		"/home/varun/DroneCore/DroneCore/DroneCore.sublime-project",
+		"/home/varun/.config/sublime-text-3/Packages/User/Package Control.sublime-settings",
+		"/home/varun/DroneCore/DroneCore/core/call_every_handler.cpp",
+		"/home/varun/DroneCore/DroneCore/CMakeLists.txt",
+		"/home/varun/DroneCore/DroneCore/libs/gtest/googlemock/include/gmock/gmock-matchers.h",
+		"/home/varun/DroneCore/DroneCore/libs/gtest/googletest/include/gtest/gtest.h",
+		"/home/varun/CMake/cmake-3.10.2-Linux-x86_64/share/cmake-3.10/Modules/FindCurses.cmake",
+		"/opt/ncurses/include/ncurses/ncurses_dll.h",
+		"/opt/ncurses/include/ncurses/ncurses.h",
+		"/home/varun/DroneCore/DroneCore/example/keyboard_test/Makefile",
+		"/home/varun/.config/sublime-text-3/Packages/ClangAutoComplete/ClangAutoComplete.sublime-settings",
+		"/home/varun/.config/sublime-text-3/Packages/User/ClangAutoComplete.sublime-settings",
+		"/home/varun/DroneCore/DroneCore/terminal.glue",
+		"/home/varun/DroneCore/DroneCore/example/takeoff_land/takeoff_and_land_3s.cpp",
+		"/home/varun/.config/sublime-text-3/Packages/User/DroneCoreExecute.sublime-build",
+		"/home/varun/DroneCore/DroneCore/README.md",
+		"/home/varun/.config/sublime-text-3/Packages/User/C++Execute.sublime-build",
+		"/home/varun/DroneCore/DroneCore/example/fly_mission/fly_mission.cpp",
+		"/home/varun/src/Firmware/Firmware.sublime-project",
+		"/home/varun/src/Firmware/src/examples/bottle_drop/bottle_drop.cpp"
+	],
+	"find":
+	{
+		"height": 39.0
+	},
+	"find_in_files":
+	{
+		"height": 101.0,
+		"where_history":
+		[
+			"/home/varun/DroneCore/DroneCore",
+			"/home/varun/DroneCore/DroneCore/example/keyboard_test/CMakeFiles"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"1.5",
+			"vehicle_r",
+			"obs_r",
+			"destination_y",
+			"destination_x",
+			"velocity_y_des",
+			"velocity_x_des",
+			"y_homeaw_recorded",
+			"y_homeaw",
+			"limit_y",
+			"limit_x",
+			"current_y",
+			"current_x",
+			"home_y",
+			"home_x",
+			"vehicle_r",
+			"obs_r",
+			"obs_y",
+			"obs_x",
+			"librotors_gazebo",
+			"x_obs",
+			"obstacles",
+			"print",
+			"obs_r",
+			"home_y",
+			"home_x",
+			"destination_y",
+			"destination_x",
+			"current_y",
+			"current_x",
+			"velocity_y_des",
+			"velocity_x_des",
+			"obs_vy",
+			"obs_vx",
+			"obs_r",
+			"obs_x",
+			"obs_y",
+			"obs_x",
+			"Scans Merger",
+			"Obstacle Extractor",
+			"destination_pose",
+			"initial_pose",
+			"yo",
+			"xo",
+			"neg_r_vel_constraint",
+			"neg_theta_vel_constraint",
+			"pos_theta_vel_constraint",
+			"pos_r_vel_constraint",
+			"theta_Bb_ineq",
+			"r_Bb_ineq",
+			"ang_vel_limit_vec",
+			"lin_vel_limit_vec",
+			"ang_vel_limit",
+			"lin_vel_limit",
+			"theta_A_eq",
+			"r_A_eq",
+			"destination_yaw",
+			"raven",
+			"<pose frame=''>-10.6596 -2.02113 -0.132258 3e-06 2e-06 0.000103</pose>",
+			"print",
+			"disp_obs_x",
+			"print",
+			"odom",
+			"robot",
+			"map",
+			"print",
+			"theta_Ba_ineq",
+			"theta_vel_constraints",
+			"r_Ba_ineq",
+			"vel_constraint",
+			"pos_constraint",
+			"theta_pos_constraint",
+			"neg_theta_constraint",
+			"pos_theta_constraint",
+			"neg_y_constraint",
+			"neg_r_constraint",
+			"pos_r_constraint",
+			"theta_b_eq",
+			"r_b_eq",
+			"x_current",
+			"theta_term_b",
+			"r_term_b",
+			"x_actual",
+			"t_limit",
+			"t_origin",
+			"t_destination",
+			"t_desired",
+			"t_actual",
+			"r_origin",
+			"r_limit",
+			"r_destination",
+			"r_desired",
+			"r_actual",
+			"ii",
+			"turn_point",
+			"r_obs",
+			"y_obs",
+			"x_obs",
+			"r_destination",
+			"r_desired",
+			"obs_point",
+			"radius",
+			"obs_y",
+			"obs_x",
+			"-h",
+			"delta",
+			"quadprog_solve",
+			"y",
+			"x",
+			"pos_vel_constraint",
+			"negative_r_constraint",
+			"positive_r_constraint",
+			"negative_pos_constraint",
+			"positive_pos_constraint",
+			"neg_vel_constraint",
+			"pos_vel_constraint",
+			"big_A_eq",
+			"big_I",
+			"big",
+			"t_current_yaw",
+			"t_desired_yaw",
+			"final_yaw",
+			"desired_point",
+			"desired_r",
+			"desired_x",
+			"desired_y",
+			"desired_yaw",
+			"velocity_x_des"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			".5",
+			"r_vehicle",
+			"r_obs",
+			"y_destination",
+			"x_destination",
+			"y_velocity_des",
+			"x_velocity_des",
+			"y_homeyaw_recorded",
+			"y_homeyaw",
+			"y_limit",
+			"x_limit",
+			"y_current",
+			"x_current",
+			"y_home",
+			"x_home",
+			"r_vehicle",
+			"r_obs",
+			"y_obs",
+			"x_obs",
+			"libgazebo",
+			"r_obs",
+			"y_home",
+			"x_home",
+			"y_destination",
+			"x_destination",
+			"y_current",
+			"x_current",
+			"y_velocity_des",
+			"x_velocity_des",
+			"vy_obs",
+			"vx_obs",
+			"r_obs",
+			"x_obs",
+			"y_obs",
+			"x_obs",
+			"final_pose",
+			"init_pose",
+			"y_o",
+			"x_o",
+			"neg_x_vel_constraint",
+			"neg_y_vel_constraint",
+			"pos_y_vel_constraint",
+			"pos_x_vel_constraint",
+			"y_Bb_ineq",
+			"x_Bb_ineq",
+			"y_vel_limit_vec",
+			"x_vel_limit_vec",
+			"y_vel_limit",
+			"x_vel_limit",
+			"y_A_eq",
+			"x_A_eq",
+			"base_link",
+			"odom",
+			"x_desired",
+			"x_actual",
+			"iterations",
+			"turtle_point",
+			"obs_r",
+			"obs_y",
+			"obs_x",
+			"obs_point_1",
+			"r_obs",
+			"y_obs",
+			"x_obs",
+			"obs_y",
+			"obs_x",
+			"pos_r_vel_constraint",
+			"neg_r_constraint",
+			"pos_r_constraint",
+			"negative_r_constraint",
+			"positive_r_constraint",
+			"negative_vel_constraint",
+			"positive_vel_constraint",
+			"r_A_eq",
+			"r_I",
+			"r",
+			"temp_current_yaw",
+			"temp_desired_yaw",
+			"destination_yaw",
+			"destination_point",
+			"destination_r",
+			"destination_x",
+			"destination_y",
+			"final_yaw",
+			"velocity_r_des",
+			"cached_var",
+			"big_0",
+			"big_I",
+			"big_b_eq",
+			"big_A_eq",
+			"gps_rate",
+			"limit_z",
+			"limit_y",
+			"limit_x",
+			"ekf_path",
+			"ekf_pose",
+			"fcu",
+			"pub4",
+			"path",
+			"drone_path",
+			"dronee_path",
+			"gps_global_cb",
+			"model",
+			"system1"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "qp_planner/src/MPC_obstacle_avoidance.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11179,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8003,
+								8003
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".>:",
+									"selector": "source.c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>:",
+									"selector": "source.c - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.cuda-c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "qp_planner/src/turtle_control.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11879,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								953,
+								953
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".>:",
+									"selector": "source.c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>:",
+									"selector": "source.c - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.cuda-c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true,
+							"word_wrap": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 5531.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "qp_planner/src/npyscreen_test.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1725,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								643,
+								643
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".>:",
+									"selector": "source.c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>:",
+									"selector": "source.c - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.objc - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".>: ",
+									"selector": "source.cuda-c++ - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 108.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/home/varun/catkin_ws/src/turtlebot3/turtlebot3_description/urdf/turtlebot3_burger.gazebo.xacro",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3864,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3406,
+								3406
+							]
+						],
+						"settings":
+						{
+							"git_savvy.repo_path": "/home/varun/catkin_ws/src/turtlebot3",
+							"syntax": "Packages/XML/XML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1458.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 27.0
+	},
+	"input":
+	{
+		"height": 39.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.GitSavvy":
+	{
+		"height": 159.0
+	},
+	"output.exec":
+	{
+		"height": 31.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.show_commit_info":
+	{
+		"height": 120.0
+	},
+	"pinned_build_system": "",
+	"project": "DroneControl.sublime-workspace",
+	"replace":
+	{
+		"height": 70.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 592.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 271.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
