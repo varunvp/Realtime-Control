@@ -201,7 +201,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			x_in = traj[1:nsteps+1]
 			y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
 			
-			#Ai*d <= Be - Ai * x
+			#Ai*d <= Bi - Ai * x
 			A_ineq_d = big_Ba_ineq
 	 		B_ineq_d = big_Bb_ineq - np.dot(A_ineq_d, traj)
 
