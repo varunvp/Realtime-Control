@@ -46,7 +46,7 @@ import qp_matrix
 global R
 global roll, pitch, yaw
 
-n = 15
+n = 20
 t = 0.1
 gps_rate = 0
 cont = 0
@@ -55,11 +55,11 @@ cart_x = cart_y = cart_z = 0.0
 home_x = home_y = home_z = 0.0
 ekf_x = ekf_y = ekf_z = 0
 desired_x = desired_y =  desired_z = 0.0
-limit_x = limit_y = limit_z = 10.
+limit_x = limit_y = limit_z = 5.
 roll = pitch = yaw = 0.0
 TIMEOUT = 0.5
 kp = 1.
-kb = 10000000.0
+kb = 1.0
 home_yaw = 0
 br = tf.TransformBroadcaster()
 br2 = tf.TransformBroadcaster()
@@ -72,6 +72,7 @@ quat.x = quat.y = quat.z = quat.w = 0
 start_y = 0.0
 timer = 0.0
 cached_var = {}
+c = 0
 
 def imu_cb(data):
     global roll, pitch, yaw
@@ -207,7 +208,7 @@ def plot(vel_y):
 
 
 def main():
-    global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw
+    global home_xy_recorded, home_z_recorded, cart_x, cart_y, cart_z, desired_x, desired_y, desired_z, home_yaw, c
     global home_x, home_z, home_y, limit_x, limit_y, limit_z, kp, kb, roll, pitch, yaw, cont, gps_rate, n, t, timer, cached_var
     xAnt = yAnt = 0
     home_xy_recorded = False
@@ -241,7 +242,7 @@ def main():
     path = Path()
     ekf_path = Path()
     mpc_path = Path()
-    max_append = 1000
+    max_append = 2000
 
     # rospy.spin()
     while not rospy.is_shutdown():
@@ -284,6 +285,8 @@ def main():
             if x == 't':
                 t = float(raw_input("Enter timestep duration:"))
 
+            if x == 'c':
+                c = float(raw_input("Enter temp constant:"))
             sys.stdin.flush()
 
         # +90 To account for diff between world and drone frame
@@ -291,14 +294,14 @@ def main():
         # desired_yaw = 360.0 + desired_yaw if desired_yaw < 0 else desired_yaw
 
         ################################ MPC ###################################
-        velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, True, variables = cached_var, vel_limit = 3)
-        x_array = cached_var.get("points")
-        velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = 3)
-        y_array = cached_var.get("points")
-        velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, True, variables = cached_var, vel_limit = 3)
-        z_array = cached_var.get("points")
+        # velocity_x_des, cached_var = MPC_solver(cart_x, desired_x, limit_x, home_x, n, t, True, variables = cached_var, vel_limit = 3)
+        # x_array = cached_var.get("points")
+        # velocity_y_des, cached_var = MPC_solver(cart_y, desired_y, limit_y, home_y, n, t, True, variables = cached_var, vel_limit = 3)
+        # y_array = cached_var.get("points")
+        # velocity_z_des, cached_var = MPC_solver(cart_z, desired_z, limit_z, home_z, n, t, True, variables = cached_var, vel_limit = 3)
+        # z_array = cached_var.get("points")
 
-        mpc_point_arr = np.transpose(np.row_stack((x_array, y_array, z_array)))
+        # mpc_point_arr = np.transpose(np.row_stack((x_array, y_array, z_array)))
         # print(mpc_point_arr)
         ############################## QP Array ################################
         # cart_array = [cart_x, cart_y, cart_z]
@@ -313,9 +316,9 @@ def main():
         # velocity_z_des = v_des[2]
 
         ############################## Only QP #################################
-        # velocity_x_des = qp_matrix.qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb)
-        # velocity_y_des = qp_matrix.qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb)
-        # velocity_z_des = qp_matrix.qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb)
+        velocity_x_des = qp_matrix.qp_q_dot_des(cart_x, desired_x, home_x, limit_x, kp, kb, c)
+        velocity_y_des = qp_matrix.qp_q_dot_des(cart_y, desired_y, home_y, limit_y, kp, kb, c)
+        velocity_z_des = qp_matrix.qp_q_dot_des(cart_z, desired_z, home_z, limit_z, kp, kb, c)
         # velocity_yaw_des = -qp_q_dot_des(yaw, desired_yaw, home_yaw, 36000, 1000, 1000
 
         # velocity_x_des = velocity_x_des if math.fabs(velocity_x_des) < 2.5 else 2.5 * math.copysign(1, velocity_x_des)
@@ -370,17 +373,17 @@ def main():
         pose.pose.position.y = pos.y
         pose.pose.position.z = pos.z
 
-        if True:
-            mpc_pose_array = [None] * n
-            for i in range(0, n):
-                mpc_pose = PoseStamped()
-                mpc_pose.header.seq = i
-                mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
-                mpc_pose.header.frame_id = "local_origin"
-                mpc_pose.pose.position.x = mpc_point_arr[i][0] + desired_x - home_x
-                mpc_pose.pose.position.y = mpc_point_arr[i][1] + desired_y - home_y
-                mpc_pose.pose.position.z = mpc_point_arr[i][2] + desired_z - home_z
-                mpc_pose_array[i] = mpc_pose
+        # if True:
+        #     mpc_pose_array = [None] * n
+        #     for i in range(0, n):
+        #         mpc_pose = PoseStamped()
+        #         mpc_pose.header.seq = i
+        #         mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
+        #         mpc_pose.header.frame_id = "local_origin"
+        #         mpc_pose.pose.position.x = mpc_point_arr[i][0] + desired_x - home_x
+        #         mpc_pose.pose.position.y = mpc_point_arr[i][1] + desired_y - home_y
+        #         mpc_pose.pose.position.z = mpc_point_arr[i][2] + desired_z - home_z
+        #         mpc_pose_array[i] = mpc_pose
 
         if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
             pose.header.seq = path.header.seq + 1
@@ -388,28 +391,26 @@ def main():
             path.header.stamp = rospy.Time.now()
             pose.header.stamp = path.header.stamp
             path.poses.append(pose)
-            ekf_pose.header.seq = ekf_path.header.seq + 1
-            ekf_path.header.frame_id = "local_origin"
-            ekf_path.header.stamp = rospy.Time.now()
-            ekf_pose.header.stamp = ekf_path.header.stamp
-            ekf_path.poses.append(ekf_pose)
-            # mpc_pose.header.seq = ekf_path.header.seq + 1
-            mpc_path.header.frame_id = "local_origin"
-            mpc_path.header.stamp = rospy.Time.now()
-            # mpc_pose.header.stamp = mpc_path.header.stamp
-            mpc_path.poses = mpc_pose_array
+            # ekf_pose.header.seq = ekf_path.header.seq + 1
+            # ekf_path.header.frame_id = "local_origin"
+            # ekf_path.header.stamp = rospy.Time.now()
+            # ekf_pose.header.stamp = ekf_path.header.stamp
+            # ekf_path.poses.append(ekf_pose)
+            # mpc_path.header.frame_id = "local_origin"
+            # mpc_path.header.stamp = rospy.Time.now()
+            # mpc_path.poses = mpc_pose_array
             cont = cont + 1
 
         xAnt = pose.pose.orientation.x
         yAnt = pose.pose.position.y
 
         pub4.publish(path)
-        pub5.publish(ekf_path)
-        pub6.publish(mpc_path)
-
-        if cont > max_append and len(path.poses) != 0 and len(ekf_path.poses):
-                path.poses.pop(0)
-                ekf_path.poses.pop(0)
+        # pub5.publish(ekf_path)
+        # pub6.publish(mpc_path)
+        
+        if cont > max_append and len(path.poses) != 0:
+            path.poses.pop(0)
+                # ekf_path.poses.pop(0)
 
         br.sendTransform((pos.x, pos.y, pos.z), (quat.x, quat.y, quat.z, quat.w), rospy.Time.now(), "base_link", "local_origin")
         br2.sendTransform((0, 0, 0), (0, 0, 0, 1), rospy.Time.now(), "fcu", "local_origin")

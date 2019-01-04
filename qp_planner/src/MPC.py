@@ -26,7 +26,7 @@ def MPC_solver(actual=0., desired=0., pos_limit=1000, origin=0, nsteps=10.,inter
 	Returns:
 		float -- Solution
 	"""
-	delta = 0.5 						#gain for barrier (h(k) >= -delta*h(k-1))
+	delta = 0.1 						#gain for barrier (h(k) >= -delta*h(k-1))
 	global prev_nsteps, prev_interval, big_I, big_0, dyn_A, dyn_b, term_A, term_b, pos_constraint, vel_constraint, big_H, big_h, big_A_eq, big_Ba_ineq
 	if variables:
 		big_A_eq = variables.get("big_A_eq")
@@ -66,6 +66,10 @@ def MPC_solver(actual=0., desired=0., pos_limit=1000, origin=0, nsteps=10.,inter
 	if nsteps != prev_nsteps:
 		positive_pos_constraint = np.eye(nsteps, nsteps) * -delta + np.eye(nsteps, nsteps, 1)
 		negative_pos_constraint = np.eye(nsteps, nsteps) * delta - np.eye(nsteps, nsteps, 1)
+
+		# positive_pos_constraint = np.subtract(delta * pos_limit, delta * np.eye(nsteps))
+		# negative_pos_constraint = np.subtract(-delta * pos_limit, -delta * np.eye(nsteps))
+
 		pos_constraint = np.row_stack( (positive_pos_constraint, negative_pos_constraint) )
 		positive_vel_constraint = np.eye(nsteps)
 		negative_vel_constraint = np.eye(nsteps) * -1
@@ -73,9 +77,11 @@ def MPC_solver(actual=0., desired=0., pos_limit=1000, origin=0, nsteps=10.,inter
 		vel_constraint = np.row_stack((positive_vel_constraint, negative_vel_constraint))
 		big_Ba_ineq = block_diag(pos_constraint, vel_constraint)
 
+	#x[n+1] - delta x[n] \leq x_max (1 - delta)
 	# big_Bb_ineq = np.concatenate((np.ones(nsteps) * (pos_limit + origin - desired), np.ones(nsteps) * (pos_limit - origin + desired)))
 	max_vel_limit = np.ones(2 * nsteps) * vel_limit
-	big_Bb_ineq = np.concatenate((np.ones(nsteps) * ((origin + pos_limit - desired) * (1 - delta)), np.ones(nsteps) * (-(origin - pos_limit - desired) *  (1 - delta))))
+	# big_Bb_ineq = np.concatenate((np.ones(nsteps) * ((origin + pos_limit - desired) * (1 - delta)) - 1, np.ones(nsteps) * (-(origin - pos_limit - desired) *  (1 - delta)) - 1))
+	big_Bb_ineq = np.concatenate((np.ones(nsteps) * (((origin + pos_limit - desired) * (1 - delta)) - 1), (np.ones(nsteps) * (-(origin - pos_limit - desired) *  (1 - delta)) - 1)))
 	big_Bb_ineq = np.concatenate((big_Bb_ineq, max_vel_limit))
 
 	#Relaxation
