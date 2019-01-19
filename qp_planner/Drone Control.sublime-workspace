@@ -1,0 +1,1797 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"uav",
+				"uav_y_vel\tstatement"
+			],
+			[
+				"dest",
+				"dest_received_flag\tstatement"
+			],
+			[
+				"Publ",
+				"publish\tfunction"
+			],
+			[
+				"bo",
+				"box_marker_1\tstatement"
+			],
+			[
+				"dro",
+				"drone_vel_cb\tfunction"
+			],
+			[
+				"Twis",
+				"TwistStamped\tmodule"
+			],
+			[
+				"local",
+				"local_position"
+			],
+			[
+				"get",
+				"get_topic"
+			],
+			[
+				"intera",
+				"interaction_mode"
+			],
+			[
+				"move",
+				"move_x"
+			],
+			[
+				"box",
+				"box_control\tstatement"
+			],
+			[
+				"Inter",
+				"InteractiveMarkerControl"
+			],
+			[
+				"yvel",
+				"y_velocity_des\tstatement"
+			],
+			[
+				"all",
+				"all_models_length\tstatement"
+			],
+			[
+				"tot",
+				"total_time"
+			],
+			[
+				"min",
+				"min_time\tstatement"
+			],
+			[
+				"max",
+				"max_time\tstatement"
+			],
+			[
+				"x",
+				"x_home\tstatement"
+			],
+			[
+				"names",
+				"namespace"
+			],
+			[
+				"yo",
+				"y_obs"
+			],
+			[
+				"oth",
+				"other_drone_positions_cb\tfunction"
+			],
+			[
+				"name",
+				"name_index\tstatement"
+			],
+			[
+				"robot",
+				"robot_namespace"
+			],
+			[
+				"arg",
+				"args\tstatement"
+			],
+			[
+				"othe",
+				"other_namespace"
+			],
+			[
+				"cur",
+				"current_position\tstatement"
+			],
+			[
+				"curre",
+				"current_position\tstatement"
+			],
+			[
+				"curr",
+				"current_position\tstatement"
+			],
+			[
+				"def",
+				"defs\tMethod"
+			],
+			[
+				"par",
+				"parse_args\tfunction"
+			],
+			[
+				"Arg",
+				"ArgumentParser\tclass"
+			],
+			[
+				"dy",
+				"dyn_b\tstatement"
+			],
+			[
+				"dyna",
+				"dyn_A\tstatement"
+			],
+			[
+				"big",
+				"big_I\tstatement"
+			],
+			[
+				"em",
+				"empty\tfunction"
+			],
+			[
+				"MPC",
+				"MPC_obstacle_avoidance_challenge1\tmodule"
+			],
+			[
+				"bi",
+				"big_0x\tstatement"
+			],
+			[
+				"cal",
+				"calc_p_hat\tfunction"
+			],
+			[
+				"add",
+				"add_argument"
+			],
+			[
+				"qp",
+				"qp_matrix"
+			],
+			[
+				"Pos",
+				"PositionTarget"
+			],
+			[
+				"lim",
+				"limit_y\tstatement"
+			],
+			[
+				"y1",
+				"y1-y2"
+			],
+			[
+				"x1",
+				"x1-x2"
+			],
+			[
+				"x3",
+				"x3-x4"
+			],
+			[
+				"y3",
+				"y3-y4"
+			],
+			[
+				"x1-",
+				"x1-x3"
+			],
+			[
+				"inter",
+				"interval\tparam"
+			],
+			[
+				"Ge",
+				"GetName"
+			],
+			[
+				"the",
+				"theta_destination\tstatement"
+			],
+			[
+				"goal",
+				"goal_frame_broadcast\tstatement"
+			],
+			[
+				"ma",
+				"math\tmodule"
+			],
+			[
+				"ori",
+				"orientation_list\tstatement"
+			],
+			[
+				"goa",
+				"goal_frame_broadcast\tstatement"
+			],
+			[
+				"orienta",
+				"orientation_q\tstatement"
+			],
+			[
+				"orient",
+				"orientation_q\tstatement"
+			],
+			[
+				"ore",
+				"orientation_q"
+			],
+			[
+				"gazebo",
+				"gazebo/math/gzmath.hh\t/usr/include/gazebo-7"
+			],
+			[
+				"in",
+				"inc\t#include \"…\""
+			],
+			[
+				"Get",
+				"GetPitch\tdouble GetPitch()"
+			],
+			[
+				"orientat",
+				"orientation_list\tstatement"
+			],
+			[
+				"ros",
+				"rospy\tmodule"
+			],
+			[
+				"fr",
+				"frame_id"
+			],
+			[
+				"al",
+				"alpha\tstatement"
+			],
+			[
+				"uin",
+				"u_in\tstatement"
+			],
+			[
+				"e",
+				"e_sq\tstatement"
+			],
+			[
+				"u",
+				"u_in\tstatement"
+			],
+			[
+				"target",
+				"target_frame\tstatement"
+			],
+			[
+				"trans",
+				"transform"
+			],
+			[
+				"ta",
+				"target_frame\tstatement"
+			],
+			[
+				"ata",
+				"atan2\tfunction"
+			],
+			[
+				"Flo",
+				"Float64\tclass"
+			],
+			[
+				"P",
+				"Publisher"
+			],
+			[
+				"at",
+				"atan2\tfunction"
+			],
+			[
+				"orien",
+				"orientation_list\tstatement"
+			],
+			[
+				"a",
+				"arg"
+			],
+			[
+				"fra",
+				"frame_rate"
+			],
+			[
+				"namesp",
+				"namespace"
+			],
+			[
+				"bb",
+				"Bb\tstatement"
+			],
+			[
+				"kb",
+				"kb\tparam"
+			],
+			[
+				"camer",
+				"camera_suffix"
+			],
+			[
+				"pare",
+				"parent_link"
+			],
+			[
+				"set",
+				"set_namespace"
+			],
+			[
+				"syste",
+				"system\tfunction"
+			],
+			[
+				"cv2",
+				"cv2_to_imgmsg\tfunction"
+			],
+			[
+				"lf",
+				"left_img\tstatement"
+			],
+			[
+				"C",
+				"CvBridge\tclass"
+			],
+			[
+				"cv",
+				"cv_bridge\tmodule"
+			],
+			[
+				"righ",
+				"right_img\tstatement"
+			],
+			[
+				"rig",
+				"right_img\tstatement"
+			],
+			[
+				"left",
+				"left_img\tstatement"
+			],
+			[
+				"ro",
+				"roll"
+			],
+			[
+				"an",
+				"and"
+			],
+			[
+				"y",
+				"y_center\tstatement"
+			],
+			[
+				"obst",
+				"obstacles_cb"
+			],
+			[
+				"loca",
+				"local_origin"
+			],
+			[
+				"is",
+				"is_shutdown"
+			],
+			[
+				"he",
+				"height"
+			],
+			[
+				"r_",
+				"r_vehicle"
+			],
+			[
+				"desi",
+				"desired_z"
+			],
+			[
+				"deis",
+				"desired_y"
+			],
+			[
+				"des",
+				"desired_x"
+			],
+			[
+				"z_",
+				"z_velocity_des"
+			],
+			[
+				"form",
+				"form_object\tclass"
+			],
+			[
+				"sle",
+				"self\tparam"
+			],
+			[
+				"deb",
+				"debug2\tstatement"
+			],
+			[
+				"debu",
+				"debug2"
+			],
+			[
+				"text",
+				"FixedText\tclass"
+			],
+			[
+				"x_ve",
+				"x_velocity_des\tstatement"
+			],
+			[
+				"xvel",
+				"x_velocity_des\tstatement"
+			],
+			[
+				"Tit",
+				"TitleText\tclass"
+			],
+			[
+				"xve",
+				"x_velocity_des"
+			],
+			[
+				"nste",
+				"nsteps_slider\tstatement"
+			],
+			[
+				"inte",
+				"interval_slider"
+			],
+			[
+				"np",
+				"npyscreen\tmodule"
+			],
+			[
+				"current",
+				"currentThread\tfunction"
+			],
+			[
+				"mai",
+				"main_thread"
+			],
+			[
+				"main",
+				"main_thread\tstatement"
+			],
+			[
+				"title",
+				"TitleMultiSelect\tclass"
+			],
+			[
+				"mul",
+				"MultiSelectAction\tclass"
+			],
+			[
+				"multi",
+				"MultiSelectAction\tclass"
+			],
+			[
+				"for",
+				"Form\tclass"
+			],
+			[
+				"gr",
+				"SimpleGrid\tclass"
+			],
+			[
+				"wh",
+				"when_value_edited\tfunction"
+			],
+			[
+				"when",
+				"when_cursor_moved\tfunction"
+			],
+			[
+				"sli",
+				"TitleSlider\tclass"
+			],
+			[
+				"ns",
+				"n_step_edited"
+			],
+			[
+				"pa",
+				"parentApp\tstatement"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "src/drone_control.py",
+			"settings":
+			{
+				"buffer_size": 23845,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/varun/.bashrc",
+			"settings":
+			{
+				"buffer_size": 4253,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/interactive_marker.py",
+			"settings":
+			{
+				"buffer_size": 5360,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/MPC_obstacle_avoidance.py",
+			"settings":
+			{
+				"buffer_size": 11367,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/varun/src/Firmware/launch/rplidar_drone.launch",
+			"settings":
+			{
+				"buffer_size": 2863,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/turtle_control.py",
+			"settings":
+			{
+				"buffer_size": 15503,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/User/CMake.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"DroneCore Run"
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"Gazebo Run"
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				],
+				[
+					"Packages/User/URDF check.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				"Gazebo Run"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/C++/C++ Single File.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"DroneCore Run"
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"Gazebo Run"
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				],
+				[
+					"Packages/User/URDF check.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				"DroneCore Run"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				"Run"
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					""
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build dependences"
+				],
+				[
+					"Packages/Catkin Builder/Catkin.sublime-build",
+					"build with debug flag"
+				],
+				[
+					"Packages/User/CMake Compile.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake List Add.sublime-build",
+					""
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				],
+				[
+					"Packages/User/MultiUAVLaunch.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/C++/C++ Single File.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/CMake.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/CMake.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/DroneCoreExecute.sublime-build",
+					""
+				]
+			],
+			[
+				"Packages/User/DroneCoreExecute.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					""
+				],
+				[
+					"Packages/C++/C++ Single File.sublime-build",
+					"Run"
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					""
+				],
+				[
+					"Packages/User/C++Execute.sublime-build",
+					"Run"
+				]
+			],
+			[
+				"Packages/User/C++Execute.sublime-build",
+				""
+			]
+		],
+		[
+			[
+				[
+					"Packages/Makefile/Make.sublime-build",
+					""
+				],
+				[
+					"Packages/Makefile/Make.sublime-build",
+					"Clean"
+				]
+			],
+			[
+				"Packages/Makefile/Make.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"ins",
+				"Package Control: Install Package"
+			],
+			[
+				"git",
+				"git: status"
+			],
+			[
+				"stat",
+				"git: status"
+			],
+			[
+				"git ",
+				"git: status"
+			],
+			[
+				"easy",
+				"EasyClangComplete: Settings"
+			],
+			[
+				"eas",
+				"EasyClangComplete: Show all errors"
+			],
+			[
+				"status",
+				"git: status"
+			],
+			[
+				"git che",
+				"git: checkout"
+			],
+			[
+				"git status",
+				"git: status"
+			],
+			[
+				"git pus",
+				"git: push"
+			],
+			[
+				"git dif",
+				"git: diff"
+			],
+			[
+				"list",
+				"Package Control: List Packages"
+			],
+			[
+				"packa",
+				"Install Package Control"
+			],
+			[
+				"git sta",
+				"git: status"
+			],
+			[
+				"git s",
+				"git: status"
+			],
+			[
+				"remote",
+				"git: remote add"
+			],
+			[
+				"dis",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"disa",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"git stat",
+				"git: status"
+			],
+			[
+				"git remote",
+				"github: set remote for integration"
+			],
+			[
+				"git add",
+				"git: remote add"
+			],
+			[
+				"git pu",
+				"git: push"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"git remot",
+				"git: remote add"
+			],
+			[
+				"git fe",
+				"git: fetch"
+			],
+			[
+				"git st",
+				"git: status"
+			],
+			[
+				"gitsa",
+				"GitSavvy: help"
+			],
+			[
+				"",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"lint",
+				"Anaconda: Disable linting on this file"
+			],
+			[
+				"in",
+				"Package Control: Install Package"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"pac",
+				"Package Control: Remove Package"
+			]
+		],
+		"width": 461.0
+	},
+	"console":
+	{
+		"height": 312.0,
+		"history":
+		[
+			"a+b",
+			"b=2",
+			"a=1",
+			"hello",
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock)",
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(\"/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock\")",
+			"import socket; socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(/home/varun/.local/share/anaconda/run/DroneCore/anaconda.sock)"
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/home/varun/mavros_ws/src/qp_planner/src"
+	],
+	"file_history":
+	[
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC_obstacle_avoidance.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/interactive_marker.py",
+		"/home/varun/src/Firmware/launch/posix_sitl.launch",
+		"/home/varun/src/Firmware/launch/rplidar_drone.launch",
+		"/usr/lib/python2.7/dist-packages/rospy/__init__.py",
+		"/usr/lib/python2.7/dist-packages/rospy/topics.py",
+		"/home/varun/.bashrc",
+		"/home/varun/zed-python/tutorials/depth_yolov3/depth.py",
+		"/home/varun/zed-python/tutorials/depth_yolov3/get_depth.py",
+		"/home/varun/zed-python/tutorials/depth.py",
+		"/home/varun/src/Firmware/launch/task_1_arena.launch",
+		"/home/varun/src/Firmware/launch/single_raven_spawn.launch",
+		"/home/varun/src/Firmware/LaunchTask1Arena.sh",
+		"/home/varun/src/Firmware/launch/multi_uav_mavros_sitl.launch",
+		"/home/varun/src/Firmware/launch/single_vehicle_spawn.launch",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven_base.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/component_snippets.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/multirotor_base.xacro",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/raven/urdf/raven_base.urdf",
+		"/home/varun/gazebo_plugins/object_motions/simple_robot_description/src/global_wind.cpp",
+		"/home/varun/gazebo_plugins/object_motions/simple_robot_description/src/wind_push.cpp",
+		"/home/varun/gazebo_plugins/object_motions/simple_robot_description/src/ellipse_equation.cpp",
+		"/opt/ros/kinetic/share/rtabmap_ros/launch/stereo_mapping.launch",
+		"/home/varun/.ros/rtabmap_gui.ini",
+		"/home/varun/.ros/rtabmapGUI.ini",
+		"/opt/ros/kinetic/share/rtabmap_ros/launch/rtabmap.launch",
+		"/home/varun/Documents/RTAB-Map/config.ini",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/examples/zed_rtabmap_example/launch/zed_rtabmap.launch",
+		"/home/varun/mavros_ws/src/qp_planner/src/drone_control.py",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/iris/iris.sdf",
+		"/home/varun/src/Firmware/LaunchMultiPX4.sh",
+		"/home/varun/src/Firmware/launch/rviz.launch",
+		"/home/varun/mavros_ws/src/qp_planner/msg/CircleObstacle.msg",
+		"/home/varun/.gazebo/models/my_models/model.sdf",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/multirotor_base.xacro",
+		"/home/varun/src/Firmware/launch/raven_test.launch",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/iris.xacro",
+		"/home/varun/mavros_ws/src/qp_planner/msg/SegmentObstacle.msg",
+		"/home/varun/mavros_ws/src/qp_planner/msg/cmdmsg.msg",
+		"/home/varun/mavros_ws/src/qp_planner/msg/Obstacles.msg",
+		"/home/varun/src/Firmware/launch/mavros_posix_sitl.launch",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC_obstacle_avoidance_challenge1.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/tracking.py",
+		"/home/varun/catkin_ws/src/mavros/mavros/src/mavros/setpoint.py",
+		"/home/varun/catkin_ws/devel/lib/python2.7/dist-packages/mavros/__init__.py",
+		"/home/varun/.config/sublime-text-3/Packages/User/Anaconda.sublime-settings",
+		"/home/varun/src/Firmware/launch/single_uav_mavros_sitl.launch",
+		"/home/varun/catkin_ws/src/mavros/mavros/src/mavros/command.py",
+		"/home/varun/catkin_ws/src/mavros/mavros/src/mavros/mavlink.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/planner.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/planner2.py",
+		"/home/varun/catkin_ws/src/mavros/mavros/src/mavros/utils.py",
+		"/home/varun/catkin_ws/src/mavros/mavros_cog.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/qp_matrix.py",
+		"/home/varun/Documents/EllipsePoints.txt",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC.py",
+		"/home/varun/Documents/plot.py",
+		"/home/varun/mavros_ws/src/qp_planner/src/turtle_control.py",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/component_snippets.xacro",
+		"/home/varun/catkin_ws/src/mavros/mavros/scripts/mavsafety",
+		"/home/varun/.config/sublime-text-3/Packages/Anaconda/Anaconda.sublime-settings",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rotors_description/urdf/iris_base.xacro",
+		"/home/varun/.config/sublime-text-3/Packages/Python.sublime-settings",
+		"/home/varun/catkin_ws/src/mavros/mavros/include/mavros/mavros.h",
+		"/home/varun/catkin_ws/src/mavros/mavros/src/mavros/param.py",
+		"/home/varun/.config/sublime-text-3/Packages/Anaconda/README.md",
+		"/opt/sublime_text/sublime.py",
+		"/home/varun/.config/sublime-text-3/Packages/python-jinja2/all/jinja2/nodes.py",
+		"/home/varun/.config/sublime-text-3/Packages/User/URDF check.sublime-build",
+		"/home/varun/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap",
+		"/home/varun/catkin_ws/src/raven2_2dnav/launch/move_base_traj.launch",
+		"/home/varun/catkin_ws/src/raven2_2dnav/launch/move_base.launch",
+		"/home/varun/mavros_ws/src/qp_planner/src/drone_control_orig.py",
+		"/home/varun/catkin_ws/src/raven2_2dnav/costmap_common_params.yaml",
+		"/home/varun/IrisParams.params",
+		"/home/varun/RavenParams.params",
+		"/home/varun/.ros/parameters2.txt",
+		"/home/varun/.ros/parameters.txt",
+		"/home/varun/mavros_ws/src/.gitignore",
+		"/home/varun/MBZIRC_Arena/Task1Arena.world",
+		"/usr/local/zed/settings/SN10026982.conf",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/zed_wrapper/cfg/Zed.cfg",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/zed_wrapper/launch/zed_camera.launch",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/zed_display_rviz/launch/display_zedm.launch",
+		"/home/varun/mavros_ws/src/qp_planner/src/MPC_obstacle_avoidance_line.py",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/zed_wrapper/launch/zed.launch",
+		"/home/varun/catkin_ws/src/zed-ros-wrapper/zed_display_rviz/launch/display.launch",
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/nodes.launch",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rplidar/model.sdf",
+		"/home/varun/catkin_ws/src/rplidar_ros/launch/rplidar.launch",
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/nodelets.launch",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/rplidar/model.config",
+		"/home/varun/src/Firmware/Tools/sitl_gazebo/models/iris_rplidar/iris_rplidar.sdf",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/nodes/scans_merger_node.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/displays/circle_visual.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/nodes/obstacle_extractor_node.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/panels/scans_merger_panel.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/src/nodelets/scans_merger_nodelet.cpp",
+		"/home/varun/catkin_ws/src/obstacle_detector/launch/demo.launch",
+		"/home/varun/vins_ws/src/VINS-Mono/vins_estimator/launch/zed.launch",
+		"/home/varun/vins_ws/src/VINS-Mono/config/zed/zed_config_no_extrinsic.yaml",
+		"/home/varun/vins_ws/src/VINS-Mono/pose_graph/src/pose_graph_node.cpp",
+		"/home/varun/vins_ws/src/VINS-Mono/vins_estimator/src/estimator.cpp",
+		"/home/varun/vins_ws/src/VINS-Mono/config/euroc/euroc_config.yaml",
+		"/home/varun/.gazebo/models/kinect/model.config",
+		"/home/varun/.gazebo/models/kinect/model-1_4.sdf",
+		"/home/varun/gazebo_plugins/urdf/Gripper_link.urdf",
+		"/home/varun/uninstalled_packages",
+		"/home/varun/.gazebo/models/gripper/model.sdf",
+		"/home/varun/vins_ws/src/VINS-Mono/vins_estimator/launch/euroc_no_extrinsic_param.launch",
+		"/home/varun/vins_ws/src/VINS-Mono/config/euroc/euroc_config_no_extrinsic.yaml",
+		"/home/varun/vins_ws/src/VINS-Mono/config/vins_rviz_config.rviz",
+		"/home/varun/phobos/README.md",
+		"/home/varun/srdf/Gripper_link.srdf",
+		"/home/varun/vins_ws/src/VINS-Mono/vins_estimator/launch/vins_rviz.launch",
+		"/home/varun/gazebo_plugins/model_push.world~",
+		"/home/varun/.gazebo/models/kinect/model.sdf",
+		"/home/varun/vins_ws/src/VINS-Mono/vins_estimator/launch/euroc.launch",
+		"/home/varun/model_editor_models/Gripper_link/model.urdf",
+		"/home/varun/catkin_ws/src/gazebo_ros_pkgs/gazebo_plugins/src/gazebo_ros_vacuum_gripper.cpp",
+		"/home/varun/mavros_ws/src/qp_planner/src/turtle_control2.py",
+		"/home/varun/model_editor_models/Gripper_link/model.sdf",
+		"/home/varun/.gazebo/models/kinect/model.urdf",
+		"/home/varun/.gazebo/models/kinect/model.sdf.urdf",
+		"/home/varun/.gazebo/models/intel_realsense_r200/model.sdf",
+		"/home/varun/catkin_ws/src/raven2_2dnav/costmap_converter_plugins.yaml",
+		"/home/varun/catkin_ws/src/raven2_2dnav/base_local_planner_params.yaml"
+	],
+	"find":
+	{
+		"height": 27.0
+	},
+	"find_in_files":
+	{
+		"height": 466.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"int_marker",
+			"box_control",
+			"box_marker",
+			"math",
+			"* ",
+			"vel_pub",
+			"max_time",
+			"gps",
+			"${robot_namespace}/base_link",
+			"base_link",
+			"uav1_base_link",
+			"/uav1/base_link",
+			"base_link_${robot_namespace}",
+			"base_link",
+			"rgb",
+			"node pkg='",
+			"node pkg=\"",
+			"reset",
+			"svo",
+			"reset",
+			"Odo",
+			"reset",
+			"odom",
+			".ini",
+			"reset",
+			"odom",
+			"publish",
+			"false",
+			"odom_topic",
+			"file",
+			"uri",
+			"my_model",
+			"urdf",
+			"other-namespace",
+			"number",
+			"namespace",
+			"Header",
+			"Obstacles",
+			"base_link_inertia",
+			"SP",
+			"setpoint",
+			"SP",
+			"p_bar",
+			"path",
+			"pub1",
+			"pitch",
+			"y_pub",
+			"argparse",
+			"librotors_",
+			"stereo_cam_macro",
+			"<?",
+			"imu",
+			"-",
+			"gazebo refere",
+			"camera_macro",
+			"stereo_cam_macro",
+			"map",
+			"controller",
+			"<?",
+			"vx",
+			"clearState()",
+			"if (true || solver_flag == INITIAL)",
+			"if (true || solver_flag == INITIAL)\n{",
+			"link_Ball hinge",
+			"cam0",
+			"estimate_id",
+			"imu",
+			"topic",
+			"<?",
+			"depth",
+			"CostmapToLinesDBSRANSAC",
+			"pub_",
+			"grasping_msg",
+			"<?",
+			"camera_link_visual",
+			"camera_link",
+			"odom",
+			"gimbal",
+			"reset",
+			"cos",
+			"sqrt",
+			"pos",
+			"tf2",
+			"xacro",
+			"left_end_effector",
+			"pose",
+			"hello_world",
+			"wind_push",
+			"alias",
+			"devel",
+			"kinetic",
+			"43",
+			"168",
+			"/home",
+			"model://",
+			"laser_scan_sensor",
+			"table_xml",
+			"table_file",
+			"scp",
+			"math.sin",
+			"math.cos",
+			"math.radians",
+			"dy",
+			"act[1] - des[1]",
+			"act[2] - des[2]",
+			"act[0] - des[0]",
+			"camera_macro",
+			"map",
+			"block",
+			"origin",
+			"camera_macro",
+			"PI",
+			"body_height",
+			"body_width",
+			"vi_sensor_depth_macro",
+			"imu",
+			"rotors"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"int_marker_1",
+			"uav_control_1",
+			"box_marker_1",
+			"/uav1/base_link",
+			"${robot_namespace}/base_link",
+			"${robot_namespace}\\base_link",
+			"base_link_hello",
+			"base_link",
+			"uav1_base_link",
+			"/uav1/base_link",
+			"base_link_${robot_namespace}",
+			"base_link_yo",
+			"base_link_${robot_namespace}",
+			"filename",
+			"file",
+			"other_namespace",
+			"namespace",
+			"number",
+			"p_hat",
+			"lib",
+			"link_ball_hinge",
+			"gripper_link_visual",
+			"gripper_link",
+			"camera_link",
+			"position",
+			"gimbal_hold",
+			"file:///home",
+			"/home/varun/src/Firmware/Tools/sitl_gazebo/models/",
+			"front_scan",
+			"brick_xml",
+			"brick_file",
+			"sin",
+			"cos",
+			"radians",
+			"des[1] - act[1]",
+			"des[2] - act[2]",
+			"des[0] - act[0]"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "src/drone_control.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23845,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								21933,
+								21933
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3960.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/home/varun/.bashrc",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4253,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4252,
+								4252
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1776.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/interactive_marker.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 5360,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4087,
+								4087
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - constant.numeric"
+								}
+							],
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1134.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/MPC_obstacle_avoidance.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11367,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								8254,
+								8254
+							]
+						],
+						"settings":
+						{
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 135.0,
+						"translation.y": 3690.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/home/varun/src/Firmware/launch/rplidar_drone.launch",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2863,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2838,
+								2838
+							]
+						],
+						"settings":
+						{
+							"git_savvy.repo_path": "/home/varun/src/Firmware",
+							"syntax": "Packages/Ros Snippets/roslaunch.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 378.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/turtle_control.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 15503,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7283,
+								7283
+							]
+						],
+						"settings":
+						{
+							"git_savvy.repo_path": "/home/varun/mavros_ws/src",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 5530.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 27.0
+	},
+	"input":
+	{
+		"height": 158.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.GitSavvy":
+	{
+		"height": 133.0
+	},
+	"output.exec":
+	{
+		"height": 177.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.mdpopups":
+	{
+		"height": 0.0
+	},
+	"output.show_commit_info":
+	{
+		"height": 120.0
+	},
+	"output.unsaved_changes":
+	{
+		"height": 126.0
+	},
+	"pinned_build_system": "",
+	"project": "Drone Control.sublime-project",
+	"replace":
+	{
+		"height": 50.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"",
+				"~/.ros/rtabmapGUI.ini"
+			],
+			[
+				"zed",
+				"~/vins_ws/src/VINS-Mono/config/zed/zed_config_no_extrinsic.yaml"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 392.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 592.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 211.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

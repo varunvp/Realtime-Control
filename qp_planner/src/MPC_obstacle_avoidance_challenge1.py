@@ -49,6 +49,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		dict -- Cached variables
 
 	"""
+
 	x_origin, y_origin, theta_init = init_pose
 	x_actual, y_actual, theta_actual = current_pose
 	x_destination, y_destination, theta_destination = final_pose
@@ -74,6 +75,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if(kwargs):
 		raise TypeError('Unexpected **kwargs: %r' % kwargs)
 
+	p_hat = np.empty((nsteps, 2))
+
 	global prev_nsteps, prev_interval, big_barrier_cons_A
 	#Retrieve cached variables, if any
 	if variables:
@@ -83,12 +86,15 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		big_h = variables.get("big_h")
 		prev_nsteps = variables.get("prev_nsteps")
 		prev_interval = variables.get("prev_interval")
+		p_hat = np.array(variables.get("p_hat"))
 
 	timer = time.time()
 
 	if nsteps != prev_nsteps:
-		big_I = np.eye(2*nsteps)
-		big_0 = np.zeros(2*nsteps)
+		big_I = np.eye(nsteps)
+		# big_0 = np.zeros(2*nsteps)
+		big_0x = p_hat[:, 0]
+		big_0y = p_hat[:, 1]
 	
 	#Get dynamic & terminal constraints
 	if (nsteps != prev_nsteps or interval != prev_interval):
@@ -101,6 +107,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 		#Concatenate dynamic and terminal LHS constraint
 		x_A_eq = np.row_stack((dyn_A, term_A))
+		x_A_eq = dyn_A
 
 	
 	x_term_b = np.array([x_actual])
@@ -109,6 +116,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	#Concatenate dynamic and terminal RHS constraint
 	x_b_eq = np.concatenate((dyn_b, x_term_b))
 	y_b_eq = np.concatenate((dyn_b, y_term_b))
+	x_b_eq = dyn_b
+	y_b_eq = dyn_b
 	big_b_eq = np.concatenate((x_b_eq, y_b_eq))
 
 	#Inequality constraints(Boundary constraints)
@@ -150,36 +159,37 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Relaxation
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		big_H = block_diag([1000], big_I, [1000], big_I)
-		big_h = np.concatenate(([0], big_0, [0], big_0))
-		x_A_eq = np.column_stack((np.zeros(nsteps + 1), x_A_eq))
-		x_A_eq[nsteps-1][0] = -1
-		x_A_eq[nsteps][1] = 1
+		# big_H = block_diag([1000], big_I, [1000], big_I)
+		big_H = block_diag(big_I, big_I * .001, big_I, big_I * .001)
+		big_h = np.concatenate((big_0x, np.zeros(nsteps), big_0y, np.zeros(nsteps)))
+		# x_A_eq = np.column_stack((np.zeros(nsteps), x_A_eq))
+		# x_A_eq[nsteps-1][0] = -1
+		# x_A_eq[nsteps][1] = 1
 		y_A_eq = x_A_eq
 		big_A_eq = block_diag(x_A_eq, y_A_eq)
 
-		x_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(x_Ba_ineq, 0))), x_Ba_ineq))
-		x_Ba_ineq[nsteps-1][0] = 1
-		x_Ba_ineq[2 * nsteps-1][0] = -1
+		# x_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(x_Ba_ineq, 0))), x_Ba_ineq))
+		# x_Ba_ineq[nsteps-1][0] = 1
+		# x_Ba_ineq[2 * nsteps-1][0] = -1
 
-		y_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(y_Ba_ineq, 0))), y_Ba_ineq))
-		y_Ba_ineq[nsteps-1][0] = 1
-		y_Ba_ineq[2 * nsteps-1][0] = -1
+		# y_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(y_Ba_ineq, 0))), y_Ba_ineq))
+		# y_Ba_ineq[nsteps-1][0] = 1
+		# y_Ba_ineq[2 * nsteps-1][0] = -1
 
 		big_Ba_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
 
-	# print(big_H)
-	# print((big_h))
-	# print((big_Ba_ineq))
-	# print((big_Bb_ineq))
-	# print((big_A_eq))
-	# print((big_b_eq))
-	# print(np.shape(big_H))
-	# print(np.shape(big_h))
-	# print(np.shape(big_Ba_ineq))
-	# print(np.shape(big_Bb_ineq))
-	# print(np.shape(big_A_eq))
-	# print(np.shape(big_b_eq))
+	print(big_H)
+	print((big_h))
+	print((big_Ba_ineq))
+	print((big_Bb_ineq))
+	print((big_A_eq))
+	print((big_b_eq))
+	print(np.shape(big_H))
+	print(np.shape(big_h))
+	print(np.shape(big_Ba_ineq))
+	print(np.shape(big_Bb_ineq))
+	print(np.shape(big_A_eq))
+	print(np.shape(big_b_eq))
 
 	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
@@ -225,13 +235,13 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 				for i in range(1, nsteps):
 					prediction_time = - i * interval
-					# print(j, len(x_obs), len(y_obs), len(vx_obs))
-					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
+
+					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] + vx_obs[j] * prediction_time, y_obs[j] + vy_obs[j] * prediction_time, r_obs[j], nsteps)
 
 					#h = r**2 - x(i)**2 - y(i)**2
-					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] - vy_obs[j] * prediction_time))**2
+					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] + vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] + vy_obs[j] * prediction_time))**2
 					#h_prev = r**2 - x(i-1)**2 - y(i-1)**2
-					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i-1] - (y_obs[j] - vy_obs[j] * prediction_time))**2
+					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] + vx_obs[j] * prediction_time))**2 - (y_in[i-1] - (y_obs[j] + vy_obs[j] * prediction_time))**2
 					gamma = 0.2
 
 					# dist = math.sqrt((x_in[i] - x_obs[j])**2 + (y_in[i] - y_obs[j])**2)
@@ -239,14 +249,14 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					# y_proj[i] = y_obs[j] + r_obs[j] / dist * (y_in[i] - y_obs[j])
 
 					#Ai <= -2 * (x(i) - x_o)
-					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] - vx_obs[j] * prediction_time))
+					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] + vx_obs[j] * prediction_time))
 					#Ai <= -2 * (y(i) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] - vy_obs[j] * prediction_time))
+					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] + vy_obs[j] * prediction_time))
 					
 					#Ai <= gamma * 2 * (x(i-1) - x_o)
-					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] - vx_obs[j] * prediction_time))
+					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] + vx_obs[j] * prediction_time))
 					#Ai <= gamma * 2 * (y(i-1) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] - vy_obs[j] * prediction_time))
+					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] + vy_obs[j] * prediction_time))
 					# barrier_cons_B[i] = - h #- 0.9 * h0
 
 					#h(k+1) >= gamma * h(k)
@@ -289,3 +299,5 @@ if __name__ == "__main__":
 	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[.7,.7,0],final_pose=[.7,.7,0],  x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
 	# MPC_solver(0, 2, 100, 0, 0, .5, 100, 0, 10, variables=update_var)
 	# MPC_solver(0, 3, 100, 0, 1, 4, 100, 0, 10, variables=update_var)
+
+
