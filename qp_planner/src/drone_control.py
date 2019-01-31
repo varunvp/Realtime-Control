@@ -151,11 +151,13 @@ def calc_target_cb(data):
     global x_destination, y_destination, z_destination, final_pose
     print("Here")
 
-    # x_destination = x_home + data.pose.position.x
-    # y_destination = y_home + data.pose.position.y
+    if(args.individual):
+        x_destination = x_home + data.pose.position.x
+        y_destination = y_home + data.pose.position.y
     
-    x_destination = x_temp
-    y_destination = y_temp
+    else:
+        x_destination = x_temp
+        y_destination = y_temp
     
     final_pose = [x_destination, y_destination, height]
     print(final_pose)
@@ -252,7 +254,8 @@ def main():
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
     rospy.Subscriber("/gazebo/model_states", ModelStates, gazebo_cb)
     rospy.Subscriber("/obstacles", Obstacles, obstacles_cb)
-    rospy.Subscriber(args.other_namespace+"_current_pose", CircleObstacle, other_drone_positions_cb)
+    if(not args.individual):
+        rospy.Subscriber(args.other_namespace+"_current_pose", CircleObstacle, other_drone_positions_cb)
     rospy.Subscriber(mavros.get_topic("local_position", "velocity"), TwistStamped, drone_vel_cb)
     rospy.Subscriber(args.namespace+"_desired_pos", Point, desired_pos_cb)
 
@@ -569,6 +572,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--namespace", default="", help="Specify namespace for individual drone")
     parser.add_argument("-o", "--other_namespace", default="", help="Specify namespace of other drone")
+    parser.add_argument("-i", "--individual", action="store_true")
     args = parser.parse_args()
     mavros.set_namespace(args.namespace+"/mavros")
     
