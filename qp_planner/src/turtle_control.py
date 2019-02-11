@@ -55,12 +55,12 @@ def model_state_cb(data):
     #     if data.model_name[i] == 'unit_cylinder':
     #         index_of_interest = i
     #         break
-
-    obstacle.model_name = "unit_cylinder"
-    obstacle.pose = data.pose[2]
-    obstacle.twist.linear.x = 0.1
-    obstacle.reference_frame = "world"
-    pub6.publish(obstacle)
+    if(len(data.name) > 2):
+        obstacle.model_name = "unit_cylinder"
+        obstacle.pose = data.pose[2]
+        obstacle.twist.linear.x = 0.1
+        obstacle.reference_frame = "world"
+        pub6.publish(obstacle)
 
 #Odometry data callback
 def odom_cb(data):
