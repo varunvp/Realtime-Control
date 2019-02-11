@@ -40,7 +40,7 @@ obstacles = []
 vehicle_r = 0.1
 batt_low = False
 scale_factor = 1.0
-is_simulation = 1              #-1 for real, 1 for simulation
+is_simulation = -1              #-1 for real, 1 for simulation
 
 counter = 0
 max_time = 0.
