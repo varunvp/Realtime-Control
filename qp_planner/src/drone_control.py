@@ -308,15 +308,15 @@ def main():
     last_request = rospy.Time.now()
     
     while not rospy.is_shutdown():
-        if (UAV_state.mode != "OFFBOARD" and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
-            set_mode(0, 'OFFBOARD')
-            print("enabling offboard mode")
-            last_request = rospy.Time.now()
-        else:
-            if (not UAV_state.armed and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
-                if (mavros.command.arming(True)):
-                    print("Vehicle armed")
-                last_request = rospy.Time.now()
+#        if (UAV_state.mode != "OFFBOARD" and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
+#            set_mode(0, 'OFFBOARD')
+#            print("enabling offboard mode")
+#            last_request = rospy.Time.now()
+#        else:
+#            if (not UAV_state.armed and (rospy.Time.now() - last_request > rospy.Duration(5.0))):
+#                if (mavros.command.arming(True)):
+#                    print("Vehicle armed")
+#                last_request = rospy.Time.now()
  
         timer = time.time()
 
