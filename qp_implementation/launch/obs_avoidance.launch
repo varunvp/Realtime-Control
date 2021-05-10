@@ -1,0 +1,7 @@
+<launch>
+	<arg name="launch_rviz" default="true"/>
+	<include file="$(find mavros)/launch/px4.launch"/>
+	<include file="$(find obstacle_detector)/launch/nodes.launch"/>
+	<include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+	<!--<node name="mpc_control" pkg="qp_implementation" type="drone_control.py" output="screen" respawn="false"/>-->
+</launch>
