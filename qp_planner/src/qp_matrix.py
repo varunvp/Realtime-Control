@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import quadprog
-import numpy
+import numpy, time
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
@@ -39,7 +39,7 @@ def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb, c):
     limit = q_limit  # in kms for position and radians for angles - very high
     q_rel = q_act - q_origin
     Ba = - 2. * q_rel  # derivative of angle_limit - x^2
-    Bb = -q_kb * ((limit * limit - q_rel * q_rel) - ((q_rel) ** 2) * c)  # - (angle_limit^2 - x^2)
+    Bb = -q_kb * ((limit ** 2 - q_rel ** 2) - ((q_rel) ** 2) * c)  # - (angle_limit^2 - x^2)
 
     # inequality constraints are given here Au \leq b
     A = array([[-1, Va], [0, -Ba]])
@@ -58,7 +58,7 @@ def qp_q_dot_des_array(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
     h = array([0., 0.])  # cost function vector    e.g. h^T u
 
     big_H = np.kron(np.eye(n), H)
-    big_h = np.zeros((2.0 * n), np.float)
+    big_h = np.zeros((2 * n), np.float)
 
     big_A = np.empty((2, 2), np.float)
     big_b = np.empty((2, 1), np.float)
@@ -120,5 +120,10 @@ if __name__ == "__main__":
     # limit = [5., 5.]
     # kp = [1., 1.]
     # kb = [10., 10.]
+    total_time_taken = 0
+    for i in range(100):
+        start_time = time.time()
+        qp_q_dot_des_array(actual, desired, origin, limit, kp, kb)
+        total_time_taken = total_time_taken + time.time() - start_time
 
-    qp_q_dot_des_array(actual, desired, origin, limit, kp, kb)
+    print('avg time over 100 runs: ', total_time_taken/100)

@@ -329,7 +329,7 @@ def main():
         # print (cart_x, cart_y, cart_z, home_x, home_y, home_z, velocity_x_des, velocity_y_des, velocity_z_des)
         # print((cart_x - home_x), (cart_y - home_y), desired_x - home_x, desired_y - home_y)
         # print(desired_x, desired_y)
-
+        
         desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         desired_point.header.frame_id = 'local_origin'
         desired_point.point.x = desired_x - home_x
