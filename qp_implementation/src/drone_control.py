@@ -32,7 +32,6 @@ height                                              = 10
 lin_vel_lim                                         = .4
 kp                                                  = .5
 kb                                                  = 10000000.0
-
 gps_rate                                            = 0
 cont                                                = 0
 x_home_recorded = z_home_recorded                   = False
@@ -57,7 +56,7 @@ x_obs = y_obs = r_obs                               = [0.0]
 vx_obs                                              = [0.0]
 vy_obs                                              = [0.0]
 obstacles                                           = [[],[],[],[],[]]
-r_vehicle                                           = 1.5
+r_vehicle                                           = 0
 final_pose                                          = [0, 0, 0]
 init_pose                                           = [0, 0, 0]
 current_pose                                        = [0, 0, 0]
@@ -123,7 +122,11 @@ def obstacles_cb(data):
         # else:
         #     vx_obs[0] = -0.5
         # obstacles = [x_obs, y_obs, r_obs, np.zeros(len(x_obs)), np.zeros(len(x_obs))]
-        obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
+        if(len(obstacles[1]) != 0):
+            obstacles = [obstacles[0].append(x_obs), obstacles[1].append(y_obs), obstacles[2].append(r_obs), obstacles[3].append(vx_obs), obstacles[4].append(vy_obs)]
+            
+        else:    
+            obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
 
 def other_drone_positions_cb(data):
     global obstacles
@@ -134,21 +137,21 @@ def other_drone_positions_cb(data):
 def gps_local_cb(data):
     global x_current, y_current, z_current, x_home, y_home, x_home_recorded, discard_samples, x_destination, y_destination, start_y, pos
 
-    x_current = data.pose.position.x
-    y_current = data.pose.position.y
-    z_current = data.pose.position.z
+    x_current = data.pose.pose.position.x
+    y_current = data.pose.pose.position.y
+    z_current = data.pose.pose.position.z
 
-    pos = data.pose.position
-    quat = data.pose.orientation
+    pos = data.pose.pose.position
+    quat = data.pose.pose.orientation
 
     if x_home_recorded is False and x_current != 0 and y_current != 0:
-        t = TransformStamped()
+        # t = TransformStamped()
 
-        t.header.stamp = rospy.Time.now() - rospy.Duration(discard_samples * .1)
-        t.header.frame_id = "map"
-        t.child_frame_id = "base_link"
-        t.transform.translation = pos
-        t.transform.rotation = quat
+        # t.header.stamp = rospy.Time.now() - rospy.Duration(discard_samples * .1)
+        # t.header.frame_id = "map"
+        # t.child_frame_id = "base_link"
+        # t.transform.translation = pos
+        # t.transform.rotation = quat
 
         # br.sendTransform(t)
 
@@ -162,15 +165,15 @@ def gps_local_cb(data):
             start_y = y_home
             x_home_recorded = True
 
-    t = TransformStamped()
+    # t = TransformStamped()
 
-    t.header.stamp = rospy.Time.now() + rospy.Duration(1)
-    t.header.frame_id = "map"
-    if(args.individual):
-        t.child_frame_id = "base_link"
+    # t.header.stamp = rospy.Time.now() + rospy.Duration(1)
+    # t.header.frame_id = "map"
+    # if(args.individual):
+    #     t.child_frame_id = "base_link"
 
-    else:
-        t.child_frame_id = args.namespace+"/base_link"
+    # else:
+    #     t.child_frame_id = args.namespace+"/base_link"
     # t.transform.translation.x = pos.x
     # t.transform.translation.y = pos.y
     # t.transform.translation.z = z_current
@@ -291,7 +294,7 @@ def main():
     # rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
     if(gps_rate == 0):
-        rospy.Subscriber(args.namespace+"/mavros/local_position/pose", PoseStamped, gps_local_cb)
+        rospy.Subscriber(args.namespace+"/mavros/global_position/local", Odometry, gps_local_cb)
 
     elif(gps_rate == 1):    
         rospy.Subscriber("/global_position_slow", Odometry, gps_local_cb)
@@ -318,7 +321,7 @@ def main():
     pub6 = rospy.Publisher(args.namespace+'/mpc_path', Path, queue_size=1)
     pub7 = rospy.Publisher(args.namespace+'/current_pose', CircleObstacle, queue_size=3)
     pub8 = rospy.Publisher(args.namespace+'/predicted_path', Path, queue_size = 1)
-    pub9 = rospy.Publisher(mavros.get_topic('global_position','home'), HomePosition, queue_size = 10)
+    pub9 = rospy.Publisher(mavros.get_topic('home_position','set'), HomePosition, queue_size = 10)
 
     path = Path()
     ekf_path = Path()
@@ -359,7 +362,7 @@ def main():
         rate.sleep()
     
     set_arming(True)
-    set_mode(0, 'OFFBOARD')
+    # set_mode(0, 'OFFBOARD')
     last_request = rospy.Time.now()
     
     main_thread = threading.currentThread()
@@ -503,17 +506,18 @@ def main():
 
         desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         desired_point.header.frame_id = 'base_link'
-        desired_point.point.x = p.point.x - x_home
-        desired_point.point.y = p.point.y - y_home
+        desired_point.point.x = p.point.x# - x_home
+        desired_point.point.y = p.point.y# - y_home
         desired_point.point.z = 0
         pub.publish(desired_point)
 
-        gps_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        gps_point.header.frame_id = 'map'
-        gps_point.point.x = (x_current - x_home)
-        gps_point.point.y = (y_current - y_home)
-        gps_point.point.z = (z_current - z_home)
-        pub2.publish(gps_point)
+        if len(obstacles) > 0 and len(obstacles[0]) > 0:
+            gps_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+            gps_point.header.frame_id = 'map'
+            gps_point.point.x = obstacles[0][0] + (obstacles[3][0] * n * t * i)#x_current# - x_home
+            gps_point.point.y = obstacles[1][0] + (obstacles[4][0] * n * t * i)#y_current# - y_home
+            gps_point.point.z = z_current# - z_home
+            pub2.publish(gps_point)
 
         boundary_cube = Marker()
         boundary_cube.header.frame_id = 'map'
@@ -542,7 +546,7 @@ def main():
                 mpc_pose = PoseStamped()
                 mpc_pose.header.seq = i
                 mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
-                mpc_pose.header.frame_id = "base_link"
+                mpc_pose.header.frame_id = args.namespace+"/base_link"
                 mpc_pose.pose.position.x = mpc_point_arr[i][0] + x_destination
                 mpc_pose.pose.position.y = mpc_point_arr[i][1] + y_destination
                 mpc_pose.pose.position.z = height
