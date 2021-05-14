@@ -52,7 +52,7 @@ quat                                                = Quaternion()
 start_y                                             = 0.0
 timer                                               = 0.0
 cached_var                                          = {}
-x_obs = y_obs = r_obs                               = [0.0]
+x_obs = y_obs = r_obs                               = []
 vx_obs                                              = [0.0]
 vy_obs                                              = [0.0]
 obstacles                                           = [[],[],[],[],[]]
@@ -122,11 +122,10 @@ def obstacles_cb(data):
         # else:
         #     vx_obs[0] = -0.5
         # obstacles = [x_obs, y_obs, r_obs, np.zeros(len(x_obs)), np.zeros(len(x_obs))]
-        if(len(obstacles[1]) != 0):
-            obstacles = [obstacles[0].append(x_obs), obstacles[1].append(y_obs), obstacles[2].append(r_obs), obstacles[3].append(vx_obs), obstacles[4].append(vy_obs)]
+        
             
-        else:    
-            obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
+        # else:    
+        # obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
 
 def other_drone_positions_cb(data):
     global obstacles
@@ -289,7 +288,7 @@ def main():
     
     path = Path() 
 
-    rate = rospy.Rate(50.0)
+    rate = rospy.Rate(10.0)
     
     # rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
@@ -321,7 +320,7 @@ def main():
     pub6 = rospy.Publisher(args.namespace+'/mpc_path', Path, queue_size=1)
     pub7 = rospy.Publisher(args.namespace+'/current_pose', CircleObstacle, queue_size=3)
     pub8 = rospy.Publisher(args.namespace+'/predicted_path', Path, queue_size = 1)
-    pub9 = rospy.Publisher(mavros.get_topic('home_position','set'), HomePosition, queue_size = 10)
+    pub9 = rospy.Publisher(mavros.get_topic('global_position','home'), HomePosition, queue_size = 10)
 
     path = Path()
     ekf_path = Path()
@@ -384,40 +383,7 @@ def main():
         #     z_home_recorded = True
             #print(z_destination)
 
-        # ready = select.select([sys.stdin], [], [], 0)[0]
 
-        # if ready:
-        #     x = ready[0].read(1)
-
-        #     if x == 'x':
-        #         limit_x = float(raw_input('Enter x limit:'))
-
-        #     if x == 'y':
-        #         limit_y = float(raw_input('Enter y limit:'))
-
-        #     if x == 'z':
-        #         limit_z = float(raw_input('Enter z limit:'))
-
-        #     if x == 'p':
-        #         kp = float(raw_input('Enter kp limit:'))
-
-        #     if x == 'b':
-        #         kb = float(raw_input('Enter kb limit:'))
-
-        #     if x == 's':
-        #         gps_rate = int(raw_input('0 - original, 1 - slow:'))
-
-        #     if x == 'n':
-        #         sys.stdin.flush()
-        #         n = int(raw_input("Enter nsteps:"))
-
-        #     if x == 't':
-        #         t = float(raw_input("Enter timestep duration:"))
-
-        #     if x == 'l':
-        #         lin_vel_lim = float(raw_input("Enter linear velocity limit:"))
-
-        #     sys.stdin.flush()
 
         if(not sleep_flag):
             rospy.sleep(2)
@@ -439,13 +405,11 @@ def main():
         dz = z_destination - z_current
         current_pose = [dx, dy, dz]
 
-        # if(len(obstacles) > 0):
-        #     print(obstacles[0], obstacles[1])
+        if(len(x_obs) != 0):
+            obstacles = [np.append(x_obs, obstacles[0]), np.append(y_obs, obstacles[1]), np.append(r_obs, obstacles[2]), np.append(vx_obs, obstacles[3]), np.append(vy_obs, obstacles[4])]
 
         timer = time.time()
 
-        # obstacles[3] = [uav_x_vel]
-        # obstacles[4] = [uav_y_vel]
         try:
             x_velocity_des, y_velocity_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles)
 
@@ -475,7 +439,7 @@ def main():
 
         #print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
         #print(current_time)
-        debug.value = str(avg_time)
+        debug.value = str(obstacles[4])
         debug2.value = str(current_time)
 
         debug.display()
@@ -606,6 +570,9 @@ def main():
         if cont > max_append and len(path.poses) != 0 and len(ekf_path.poses):
             path.poses.pop(0)
             ekf_path.poses.pop(0)
+
+        # x_obs = []
+
         
 if __name__ == "__main__":
     global main_thread

@@ -31,25 +31,44 @@ import rospy
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
 from geometry_msgs.msg import Point
+from qp_planner.msg import Obstacles, CircleObstacle
+from mavros_msgs.msg import HomePosition
+from nav_msgs.msg import Odometry
+
+obstacles = [[], [], [], [], []]
+drone_obstacles = Obstacles()
+drone_obstacles.circles = [CircleObstacle()] * 4
 
 rospy.init_node("simple_marker")
 
 uav1_pub = rospy.Publisher("uav0/desired_pos", Point, queue_size=3)
 uav2_pub = rospy.Publisher("uav1/desired_pos", Point, queue_size=3)
 
+global publish_drones_pos
+
 def processFeedback1(feedback):
-    p = feedback.pose.position
     dest = Point()
     dest = feedback.pose.position
     uav1_pub.publish(dest)
-    # print feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z)
 
 def processFeedback2(feedback):
-    p = feedback.pose.position
     dest = Point()
     dest = feedback.pose.position
     uav2_pub.publish(dest)
-    # print feedback.marker_name + " is now at " + str(p.x) + ", " + str(p.y) + ", " + str(p.z)
+
+def receive_position_cb(data):
+    global obstacles, drone_obstacles, publish_drones_pos
+
+    index = int(data.child_frame_id[3])
+
+    drone_obstacles.circles[index].center.x = data.pose.pose.position.x
+    drone_obstacles.circles[index].center.y = data.pose.pose.position.y
+    drone_obstacles.circles[index].radius = 0.5
+    drone_obstacles.circles[index].velocity.x = data.twist.twist.linear.x
+    drone_obstacles.circles[index].velocity.y = data.twist.twist.linear.y
+
+    print(data.child_frame_id)
+    publish_drones_pos.publish(drone_obstacles)
 
 if __name__=="__main__":
     
@@ -117,16 +136,6 @@ if __name__=="__main__":
     int_marker_2.controls.append( uav_control_2 )
     uav_control_2.markers.append( box_marker_2 )
 
-    # create a control which will move the box
-    # this control does not contain any markers,
-    # which will cause RViz to insert two arrows
-    # rotate_control = InteractiveMarkerControl()
-    # rotate_control.name = "move_x"
-    # rotate_control.interaction_mode = InteractiveMarkerControl.MOVE_AXIS
-
-    # # add the control to the interactive marker
-    # int_marker_1.controls.append(rotate_control);
-
     # add the interactive marker to our collection &
     # tell the server to call processFeedback() when feedback arrives for it
     server.insert(int_marker_1, processFeedback1)
@@ -134,5 +143,22 @@ if __name__=="__main__":
 
     # 'commit' changes and send to all clients
     server.applyChanges()
+
+    publish_drones_pos = rospy.Publisher('/drones_state', Obstacles, queue_size = 2)
+
+    for i in range(4):
+        rospy.Subscriber('/uav'+str(i)+'/mavros/global_position/local', Odometry, receive_position_cb)
+
+        home_publisher = rospy.Publisher('/uav'+str(i)+'/mavros/global_position/home', HomePosition, queue_size = 10)
+
+        home_latlong = HomePosition()
+        home_latlong.geo.latitude = 13.027207
+        home_latlong.geo.longitude = 77.563642
+        home_latlong.geo.altitude = 918
+
+        print(i)
+        for _ in range(0, 10):
+            home_publisher.publish(home_latlong)
+
 
     rospy.spin()
