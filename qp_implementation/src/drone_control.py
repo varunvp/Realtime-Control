@@ -56,7 +56,7 @@ x_obs = y_obs = r_obs                               = []
 vx_obs                                              = [0.0]
 vy_obs                                              = [0.0]
 obstacles                                           = [[],[],[],[],[]]
-r_vehicle                                           = 0
+r_vehicle                                           = 0.5
 final_pose                                          = [0, 0, 0]
 init_pose                                           = [0, 0, 0]
 current_pose                                        = [0, 0, 0]
@@ -66,7 +66,6 @@ prev_models_length                                  = 0
 dest_received_flag                                  = False
 x_temp = y_temp                                     = 0.
 prev_x                                              = 0.
-
 counter                                             = 0
 max_time                                            = 0.
 min_time                                            = 1000.
@@ -79,7 +78,7 @@ class form_object(npyscreen.Form):
         main_thread.start()
 
         nsteps_slider = self.add(npyscreen.TitleSlider, name = "No. of steps:", value = 15, out_of = 50)
-        interval_slider = self.add(npyscreen.TitleSlider, name = "Time interval:", value = .2, out_of = 10, step = 0.1)
+        interval_slider = self.add(npyscreen.TitleSlider, name = "Time interval:", value = .1, out_of = 10, step = 0.1)
         speed_slider = self.add(npyscreen.TitleSlider, name = "Speed:", value = 0.5, out_of = 3, step = 0.1)
         debug = self.add(npyscreen.TitleText, name="Average time:")
         debug2 = self.add(npyscreen.TitleText, name="Instantaneous time:")
@@ -128,10 +127,16 @@ def obstacles_cb(data):
         # obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
 
 def other_drone_positions_cb(data):
-    global obstacles
+    global obstacles, index
 
-    obstacles = [[data.center.x], [data.center.y], [data.radius], [data.velocity.x], [data.velocity.y]]
-    # print(len(obstacles), obstacles[0], obstacles[1])
+    # obstacles = [[data.center.x], [data.center.y], [data.radius], [data.velocity.x], [data.velocity.y]]
+    x_obs = np.delete(np.array([obj.center.x for obj in data.circles]), index)
+    y_obs = np.delete(np.array([obj.center.y for obj in data.circles]), index)
+    vx_obs = np.delete(np.array([obj.velocity.x for obj in data.circles]), index)
+    vy_obs = np.delete(np.array([obj.velocity.y for obj in data.circles]), index)
+    r_obs = np.delete(np.array([obj.radius for obj in data.circles]), index)
+
+    obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
 
 def gps_local_cb(data):
     global x_current, y_current, z_current, x_home, y_home, x_home_recorded, discard_samples, x_destination, y_destination, start_y, pos
@@ -304,10 +309,10 @@ def main():
     # rospy.Subscriber(args.namespace+"/mavros/altitude", Altitude, alt_cb)
     rospy.Subscriber(args.namespace+"/mavros/local_position/pose", PoseStamped, pose_cb)
     rospy.Subscriber("/move_base_simple/goal", PoseStamped, calc_target_cb)
-    # rospy.Subscriber("/gazebo/model_states", ModelStates, gazebo_cb)
     rospy.Subscriber("/obstacles", Obstacles, obstacles_cb)
     if(not args.individual):
-        rospy.Subscriber(args.other_namespace+"/current_pose", CircleObstacle, other_drone_positions_cb)
+        # rospy.Subscriber(args.other_namespace+"/current_pose", CircleObstacle, other_drone_positions_cb)
+        rospy.Subscriber("/drones_state", Obstacles, other_drone_positions_cb)
     rospy.Subscriber(mavros.get_topic("local_position", "velocity_local"), TwistStamped, drone_vel_cb)
     rospy.Subscriber(args.namespace+"/desired_pos", Point, desired_pos_cb)
 
@@ -348,20 +353,20 @@ def main():
     home_latlong.geo.longitude = 77.563642
     home_latlong.geo.altitude = 918
 
-    for i in range(0, 10):
-        pub9.publish(home_latlong)
+    # for i in range(0, 10):
+    #     pub9.publish(home_latlong)
     # initialize the setpoint
     setpoint_msg.twist.linear.x = 0
     setpoint_msg.twist.linear.y = 0
     setpoint_msg.twist.linear.z = 0.1
     
     # send 50 setpoints before starting
-    for i in range(0, 50):
+    for i in range(0, 10):
         pub1.publish(setpoint_msg)
         rate.sleep()
     
     set_arming(True)
-    # set_mode(0, 'OFFBOARD')
+    set_mode(0, 'OFFBOARD')
     last_request = rospy.Time.now()
     
     main_thread = threading.currentThread()
@@ -383,10 +388,8 @@ def main():
         #     z_home_recorded = True
             #print(z_destination)
 
-
-
         if(not sleep_flag):
-            rospy.sleep(2)
+            rospy.sleep(1)
             sleep_flag = True
 
         transform_time = rospy.Time.now()
@@ -405,8 +408,8 @@ def main():
         dz = z_destination - z_current
         current_pose = [dx, dy, dz]
 
-        if(len(x_obs) != 0):
-            obstacles = [np.append(x_obs, obstacles[0]), np.append(y_obs, obstacles[1]), np.append(r_obs, obstacles[2]), np.append(vx_obs, obstacles[3]), np.append(vy_obs, obstacles[4])]
+        # if(len(x_obs) != 0):
+        #     obstacles = [np.append(x_obs, obstacles[0]), np.append(y_obs, obstacles[1]), np.append(r_obs, obstacles[2]), np.append(vx_obs, obstacles[3]), np.append(vy_obs, obstacles[4])]
 
         timer = time.time()
 
@@ -439,7 +442,7 @@ def main():
 
         #print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
         #print(current_time)
-        debug.value = str(obstacles[4])
+        debug.value = str(avg_time)
         debug2.value = str(current_time)
 
         debug.display()
@@ -451,7 +454,6 @@ def main():
         z_velocity_des = 0.5 * dz
         
         mpc_point_arr = np.transpose(np.row_stack((x_array, y_array)))
-        # print(mpc_point_arr)
         
         theta = math.atan2(y_velocity_des, x_velocity_des)
         x_vel_limit = lin_vel_lim * math.cos(theta)
@@ -575,7 +577,7 @@ def main():
 
         
 if __name__ == "__main__":
-    global main_thread
+    global main_thread, index
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--namespace", default="", help="Specify namespace for individual drone")
     parser.add_argument("-o", "--other_namespace", default="", help="Specify namespace of other drone")
@@ -594,6 +596,8 @@ if __name__ == "__main__":
     else:
         mavros.set_namespace(args.namespace+"/mavros")
     
+    index = int(args.namespace[3])
+
     do_run = True
     main_thread = threading.Thread(target = main)
     app = App().run()
