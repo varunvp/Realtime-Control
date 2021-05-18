@@ -7,7 +7,7 @@ from scipy.linalg import block_diag
 prev_nsteps = 0
 prev_interval = 0
 big_I = big_0= big_A_eq= dyn_A= dyn_b= term_A= term_b= x_pos_constraint= x_vel_constraint = np.empty(2)
-big_H= big_h= big_A_eq= big_Ba_ineq = np.empty(2)
+big_H= big_h= big_A_eq= big_A_ineq = np.empty(2)
 big_barrier_cons_A = None 
 counter = 0
 max_time = 0.
@@ -78,7 +78,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	#Retrieve cached variables, if any
 	if variables:
 		big_A_eq = variables.get("big_A_eq") 
-		big_Ba_ineq = variables.get("big_Ba_ineq")
+		big_A_ineq = variables.get("big_A_ineq")
 		big_H = variables.get("big_H")
 		big_h = variables.get("big_h")
 		prev_nsteps = variables.get("prev_nsteps")
@@ -109,7 +109,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	#Concatenate dynamic and terminal RHS constraint
 	x_b_eq = np.concatenate((dyn_b, x_term_b))
 	y_b_eq = np.concatenate((dyn_b, y_term_b))
-	big_b_eq = np.concatenate((x_b_eq, y_b_eq))
+	big_B_eq = np.concatenate((x_b_eq, y_b_eq))
 
 	#Inequality constraints(Boundary constraints)
 	if nsteps != prev_nsteps:
@@ -146,7 +146,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	#Ax = +/-((x_orig + x_lim) * (1 - delta))
 	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_limit) *  (1 - delta)), x_vel_limit_vec))
 	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_limit) *  (1 - delta)), y_vel_limit_vec))
-	big_Bb_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
+	big_B_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
 
 	#Relaxation
 	if (nsteps != prev_nsteps or interval != prev_interval):
@@ -166,23 +166,23 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		y_Ba_ineq[nsteps-1][0] = 1
 		y_Ba_ineq[2 * nsteps-1][0] = -1
 
-		big_Ba_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
+		big_A_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
 
 	# print(big_H)
 	# print((big_h))
-	# print((big_Ba_ineq))
-	# print((big_Bb_ineq))
+	# print((big_A_ineq))
+	# print((big_B_ineq))
 	# print((big_A_eq))
-	# print((big_b_eq))
+	# print((big_B_eq))
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
-	# print(np.shape(big_Ba_ineq))
-	# print(np.shape(big_Bb_ineq))
+	# print(np.shape(big_A_ineq))
+	# print(np.shape(big_B_ineq))
 	# print(np.shape(big_A_eq))
-	# print(np.shape(big_b_eq))
+	# print(np.shape(big_B_eq))
 
 	#Obstacle free path
-	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_Ba_ineq, big_Bb_ineq, big_A_eq, big_b_eq)
+	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
 
 	traj = u_in
 	#Successive convexification for obstacle avoidance
@@ -202,12 +202,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
 			
 			#Ai*d <= Bi - Ai * x
-			A_ineq_d = big_Ba_ineq
-	 		B_ineq_d = big_Bb_ineq - np.dot(A_ineq_d, traj)
+			A_ineq_d = big_A_ineq
+	 		B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
 
-	 		#Ae*d <= be - Ae * x
+	 		#Ae*d = be - Ae * x
 			A_eq_d = big_A_eq
-			b_eq_d = big_b_eq - np.dot(big_A_eq, traj)
+			b_eq_d = big_B_eq - np.dot(big_A_eq, traj)
 				
 			# x_proj = np.zeros(np.shape(x_in))
 			# y_proj = np.zeros(np.shape(y_in))
@@ -216,17 +216,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
 				barrier_cons_B = np.zeros(nsteps)
 
-				# x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j], y_obs[j], r_obs[j], nsteps)
-
-				# for i in range(0, nsteps):
-				# dist = math.sqrt((x_in[0] - x_obs[j])**2 + (y_in[0] - y_obs[j])**2)
-				# x_proj[0] = x_obs[j] + r_obs[j] / dist * (x_in[0] - x_obs[j])
-				# y_proj[0] = y_obs[j] + r_obs[j] / dist * (y_in[0] - y_obs[j])
+				x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
 
 				for i in range(1, nsteps):
 					prediction_time = - i * interval
 					# print(j, len(x_obs), len(y_obs), len(vx_obs))
-					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
 
 					#h = r**2 - x(i)**2 - y(i)**2
 					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] - vy_obs[j] * prediction_time))**2
@@ -272,7 +266,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
 	# if(True):
-		variables = {"big_A_eq": big_A_eq, "big_Ba_ineq": big_Ba_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj}
+		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj}
 
 		prev_nsteps = nsteps
 		prev_interval = interval
