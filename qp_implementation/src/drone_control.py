@@ -39,7 +39,7 @@ x_current = y_current = z_current                   = 0.0
 x_home = y_home = z_home                            = 0.0
 ekf_x = ekf_y = ekf_z                               = 0
 x_destination = y_destination =  z_destination      = 0.0
-limit_x = limit_y = limit_z                         = 10.
+limit_x = limit_y = limit_z                         = 5.
 roll = pitch = yaw                                  = 0.0
 TIMEOUT                                             = 0.5
 y_homeyaw                                           = 0
@@ -414,7 +414,7 @@ def main():
         timer = time.time()
 
         try:
-            x_velocity_des, y_velocity_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles)
+            x_velocity_des, y_velocity_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles)
 
         except ValueError:
             x_velocity_des = 0

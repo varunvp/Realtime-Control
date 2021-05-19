@@ -144,8 +144,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Positive and negative box constraints for x and y positions
 	#Ax = +/-((x_orig + x_lim) * (1 - delta))
-	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_limit) *  (1 - delta)), x_vel_limit_vec))
-	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_limit) *  (1 - delta)), y_vel_limit_vec))
+	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
+	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
 	big_B_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
 
 	#Relaxation
@@ -183,7 +183,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-
+	# print(u_in)
 	traj = u_in
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -216,10 +216,10 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
 				barrier_cons_B = np.zeros(nsteps)
 
-				x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
 
 				for i in range(1, nsteps):
 					prediction_time = - i * interval
+					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
 					# print(j, len(x_obs), len(y_obs), len(vx_obs))
 
 					#h = r**2 - x(i)**2 - y(i)**2
@@ -280,6 +280,6 @@ if __name__ == "__main__":
 	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver
 	# lin_u, ang_u, update_var = MPC_solver(x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[.7,.7,0],final_pose=[.7,.7,0],  x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[7.75,0,0],final_pose=[-8.75,0,0], x_limit = 1, y_limit = 1, nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
 	# MPC_solver(0, 2, 100, 0, 0, .5, 100, 0, 10, variables=update_var)
 	# MPC_solver(0, 3, 100, 0, 1, 4, 100, 0, 10, variables=update_var)
