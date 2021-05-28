@@ -1,8 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+import cvxpy as cp
 import qp_matrix, time, math
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
+from time import perf_counter
+from cvxopt import matrix, solvers
+
 
 prev_nsteps = 0
 prev_interval = 0
@@ -12,6 +16,7 @@ big_barrier_cons_A = None
 counter = 0
 max_time = 0.
 min_time = 1000.
+
 
 def project_to_obstacles(x_in, y_in, x_obs, y_obs, r_obs, nsteps):
 	x_proj = np.zeros(np.shape(x_in))
@@ -182,9 +187,21 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# print(np.shape(big_B_eq))
 
 	#Obstacle free path
-	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-	# print(u_in)
-	traj = u_in
+	# t1_start = perf_counter()
+	# u_in_qp = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
+	# t1_stop = perf_counter()
+	# print(u_in_qp, t1_stop - t1_start)
+
+	t1_start = perf_counter()
+	u = cp.Variable(4*nsteps + 2)
+	u_in = cp.Problem(cp.Minimize((1/2)*cp.quad_form(u, big_H) + big_h.T @ u),
+                 [big_A_ineq @ u <= big_B_ineq,
+                  big_A_eq @ u == big_B_eq])
+	u_in.solve(cp.OSQP)
+	t1_stop = perf_counter()
+
+	print(u.value, t1_stop - t1_start)
+	traj = u.value
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = -np.subtract(x_destination, x_obs)
@@ -203,9 +220,9 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			
 			#Ai*d <= Bi - Ai * x
 			A_ineq_d = big_A_ineq
-	 		B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
+			B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
 
-	 		#Ae*d = be - Ae * x
+			#Ae*d = be - Ae * x
 			A_eq_d = big_A_eq
 			b_eq_d = big_B_eq - np.dot(big_A_eq, traj)
 				
@@ -248,9 +265,9 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					# print barrier_cons_A, barrier_cons_B
 
 				A_ineq_d = np.vstack((A_ineq_d, barrier_cons_A))
-		 		B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
-	 		
-			d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
+				B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
+				
+			d_traj_out = qp_matrix.cvxopt_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
 			traj += d_traj_out
 			d = np.linalg.norm(d_traj_out)
 
@@ -277,9 +294,24 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	return traj[nsteps+1], traj[3 * nsteps+2], variables
 
 if __name__ == "__main__":
-	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
+	np.set_printoptions(precision=3, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver
 	# lin_u, ang_u, update_var = MPC_solver(x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
 	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[7.75,1,0],final_pose=[-8.75,0,0], x_limit = 1, y_limit = 1, nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
+	print(prev_nsteps)
 	# MPC_solver(0, 2, 100, 0, 0, .5, 100, 0, 10, variables=update_var)
 	# MPC_solver(0, 3, 100, 0, 1, 4, 100, 0, 10, variables=update_var)
+	# c = matrix([-2., 1., 5.])
+
+	# G = [ matrix( [[12., 13., 12.], [6., -3., -12.], [-5., -5., 6.]] ) ]
+
+	# G += [ matrix( [[3., 3., -1., 1.], [-6., -6., -9., 19.], [10., -2., -2., -3.]] ) ]
+
+	# h = [ matrix( [-12., -3., -2.] ),  matrix( [27., 0., 3., -42.] ) ]
+
+	# star1 = perf_counter()
+	# sol = solvers.socp(c, Gq = G, hq = h)
+	# stop1 = perf_counter()
+
+	# print('Time', stop1 - star1)
+	# sol['status']

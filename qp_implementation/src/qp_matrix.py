@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import quadprog, math
+import quadprog, math, cvxopt
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
@@ -22,6 +22,21 @@ def quadprog_solve_qp(H, h, A=None, b=None, C=None, d=None):
     # print qp_C
     # print qp_d
     return quadprog.solve_qp(qp_H, qp_h, qp_C, qp_d, meq)[0]
+
+
+def cvxopt_solve_qp(P, q, G=None, h=None, A=None, b=None):
+    P = .5 * (P + P.T)  # make sure P is symmetric
+    args = [cvxopt.matrix(P), cvxopt.matrix(q)]
+    if G is not None:
+        args.extend([cvxopt.matrix(G), cvxopt.matrix(h)])
+        if A is not None:
+            args.extend([cvxopt.matrix(A), cvxopt.matrix(b)])
+
+    cvxopt.solvers.options['show_progress'] = False
+    sol = cvxopt.solvers.qp(*args)
+    if 'optimal' not in sol['status']:
+        return None
+    return np.array(sol['x']).reshape((P.shape[1],))
 
 
 def qp_q_dot_des(q_act, q_des, q_origin, q_limit, q_kp, q_kb):
@@ -150,7 +165,7 @@ def qp_non_holonomic_solver(act, des, obs, kp, kb):
     #V dot
     Va[0] = - sqrt(e_sq) * cos(radians(des[2] - act[2])) + sin(radians(des[2] - act[2])) * ((des[2] - act[2]) + 1 * des[2]) / (sqrt(e_sq))
     Va[1] = - (des[2] - act[2]) #- 2 * (des[2] - act[2])
-    print des[2], act[2]
+    print(des[2], act[2])
     # V
     # Vb[0] = - kp * (cos(radians((des[2] - act[2]))) ** 2 * e_sq)
     # Vb[1] = - kp * ((des[2] - act[2]) ** 2) #(des[2] - act[2]) ** 2
@@ -171,9 +186,9 @@ def qp_non_holonomic_solver(act, des, obs, kp, kb):
 
     # print(u_in[0])
     if __name__ == "__main__":
-        print A
-        print b
-        print u_in
+        print(A)
+        print(b)
+        print(u_in)
 
     return u_in[1], u_in[2]
 
