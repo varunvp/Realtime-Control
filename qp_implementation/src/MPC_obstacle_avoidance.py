@@ -102,7 +102,6 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		#Concatenate dynamic and terminal LHS constraint
 		x_A_eq = np.row_stack((dyn_A, term_A))
 
-	
 	x_term_b = np.array([x_actual])
 	y_term_b = np.array([y_actual])
 	
@@ -143,7 +142,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	y_vel_limit_vec = np.ones(2 * nsteps) * y_vel_limit
 
 	#Positive and negative box constraints for x and y positions
-	#Ax = +/-((x_orig + x_lim) * (1 - delta))
+	#Ax = +/-((x_orig - x_destination + x_lim) * (1 - delta))
 	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
 	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
 	big_B_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
@@ -152,6 +151,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if (nsteps != prev_nsteps or interval != prev_interval):
 		big_H = block_diag([1000], big_I, [1000], big_I)
 		big_h = np.concatenate(([0], big_0, [0], big_0))
+
 		x_A_eq = np.column_stack((np.zeros(nsteps + 1), x_A_eq))
 		x_A_eq[nsteps-1][0] = -1
 		x_A_eq[nsteps][1] = 1
@@ -168,12 +168,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 		big_A_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
 
-	# print(big_H)
-	# print((big_h))
-	# print((big_A_ineq))
-	# print((big_B_ineq))
-	# print((big_A_eq))
-	# print((big_B_eq))
+	print(big_H)
+	print((big_h))
+	print((big_A_ineq))
+	print((big_B_ineq))
+	print((big_A_eq))
+	print((big_B_eq))
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
 	# print(np.shape(big_A_ineq))
@@ -183,7 +183,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-	# print(u_in)
+	print(u_in)
 	traj = u_in
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -203,9 +203,9 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			
 			#Ai*d <= Bi - Ai * x
 			A_ineq_d = big_A_ineq
-	 		B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
+			B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
 
-	 		#Ae*d = be - Ae * x
+			#Ae*d = be - Ae * x
 			A_eq_d = big_A_eq
 			b_eq_d = big_B_eq - np.dot(big_A_eq, traj)
 				
@@ -248,8 +248,9 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					# print barrier_cons_A, barrier_cons_B
 
 				A_ineq_d = np.vstack((A_ineq_d, barrier_cons_A))
-		 		B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
-	 		
+				B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
+				
+			# print(np.shape(A_ineq_d))
 			d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
 			traj += d_traj_out
 			d = np.linalg.norm(d_traj_out)
@@ -280,6 +281,6 @@ if __name__ == "__main__":
 	np.set_printoptions(precision=None, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver
 	# lin_u, ang_u, update_var = MPC_solver(x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[7.75,1,0],final_pose=[-8.75,0,0], x_limit = 1, y_limit = 1, nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[5,5,0],final_pose=[0,0,0], x_limit = 100, y_limit = 100, nsteps=3, interval = 1 ,variables=None, obstacles = [[5],[5],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
 	# MPC_solver(0, 2, 100, 0, 0, .5, 100, 0, 10, variables=update_var)
 	# MPC_solver(0, 3, 100, 0, 1, 4, 100, 0, 10, variables=update_var)

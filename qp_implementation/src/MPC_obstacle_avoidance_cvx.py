@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import cvxpy as cp
-import qp_matrix, time, math
+import time, math
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
@@ -59,7 +59,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	x_destination, y_destination, theta_destination = final_pose
 
 	delta = 0.5
-	d = 10000
+	d_norm = 10000
 
 	ret_points = kwargs.pop("ret_points", False)
 	x_vel_limit = kwargs.pop("x_vel_limit", 10000)
@@ -91,20 +91,30 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	timer = time.time()
 
+	x_term_offset = 2 * nsteps + 1
+
 	if nsteps != prev_nsteps:
-		big_I = np.eye(2*nsteps)
-		big_0 = np.zeros(2*nsteps)
+		# [1 0 0    0]
+		# [0 1 0    0] 
+		# [0 0 1000 0]				Relaxation for x_k, k = N
+		# [0 0 0    1]
+		big_I = np.eye(2*nsteps + 1)
+		big_I[nsteps][nsteps] = 1000
+		# [0 0 0].T
+		big_0 = np.zeros(2*nsteps + 1)
 	
 	#Get dynamic & terminal constraints
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		# [1 -1  0 t 0 0]
-		# [0  1 -1 0 t 0] 
-		# [0  0  1 0 0 t]
-		dyn_A = np.column_stack((np.eye(nsteps , dtype=float) + np.eye(nsteps, nsteps , 1, dtype=float) * -1, np.eye(nsteps, dtype=float) * interval)) 	
+		# [1 -1  0  0 t 0 0]
+		# [0  1 -1  0 0 t 0] 
+		# [0  0  1 -1 0 0 t]
+		dyn_A = np.column_stack((np.eye(nsteps, nsteps+1, dtype=float) + np.eye(nsteps, nsteps+1, 1, dtype=float) * -1, np.eye(nsteps, dtype=float) * interval)) 	
 		dyn_b = np.zeros(nsteps, dtype=float)
-		term_A = np.zeros((2*nsteps), dtype=float)
 
-		#Concatenate dynamic and terminal LHS constraint
+		# [0  0  0 0 0 0]
+		term_A = np.zeros((2*nsteps+1), dtype=float)
+
+		#Row stack dynamic and terminal LHS constraint
 		x_A_eq = np.row_stack((dyn_A, term_A))
 
 	
@@ -125,21 +135,21 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		neg_x_vel_constraint = neg_y_vel_constraint = np.eye(nsteps) * -1
 
 		#Positive and negative box constraints for x and y positions
-		#x(n) * delta +/- x(n+1) <= B
-		pos_x_constraint = np.eye(nsteps) * -delta + np.eye(nsteps, nsteps, 1)
-		neg_x_constraint = np.eye(nsteps) * delta - np.eye(nsteps, nsteps, 1)
+		# -/+ x(n) * delta +/- x(n+1) <= B
+		pos_x_constraint = np.eye(nsteps,nsteps+1) * -delta + np.eye(nsteps, nsteps+1, 1)
+		neg_x_constraint = np.eye(nsteps,nsteps+1) * delta - np.eye(nsteps, nsteps+1, 1)
 		x_pos_constraint = np.row_stack( (pos_x_constraint, neg_x_constraint) )
 
 		#y(n) * delta +/- y(n+1) <= B
-		pos_y_constraint = np.eye(nsteps) * -delta + np.eye(nsteps, nsteps, 1)
-		neg_y_constraint = np.eye(nsteps) * delta - np.eye(nsteps, nsteps, 1)
+		pos_y_constraint = np.eye(nsteps,nsteps+1) * -delta + np.eye(nsteps, nsteps+1, 1)
+		neg_y_constraint = np.eye(nsteps,nsteps+1) * delta - np.eye(nsteps, nsteps+1, 1)
 		y_pos_constraint = np.row_stack((pos_y_constraint, neg_y_constraint))
 
 		#Constraints concatenation
 		x_vel_constraint = np.row_stack((pos_x_vel_constraint, neg_x_vel_constraint))
-		x_Ba_ineq = block_diag(x_pos_constraint, x_vel_constraint)
+		x_A_ineq = block_diag(x_pos_constraint, x_vel_constraint)
 		y_vel_constraints = np.row_stack((pos_y_vel_constraint, neg_y_vel_constraint))
-		y_Ba_ineq = block_diag(y_pos_constraint, y_vel_constraints)
+		y_A_ineq = block_diag(y_pos_constraint, y_vel_constraints)
 
 	#RHS
 	#Positive and negative velocity constraints for x and y velocities
@@ -148,37 +158,29 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	y_vel_limit_vec = np.ones(2 * nsteps) * y_vel_limit
 
 	#Positive and negative box constraints for x and y positions
-	#Ax = +/-((x_orig + x_lim) * (1 - delta))
-	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
-	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
-	big_B_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
+	#Ax <= +/-((x_orig - x_destination + x_lim) * (1 - delta))
+	x_B_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
+	y_B_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
+	big_B_ineq = np.concatenate((x_B_ineq, y_B_ineq))
 
 	#Relaxation
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		big_H = block_diag([1000], big_I, [1000], big_I)
-		big_h = np.concatenate(([0], big_0, [0], big_0))
-		x_A_eq = np.column_stack((np.zeros(nsteps + 1), x_A_eq))
-		x_A_eq[nsteps-1][0] = -1
-		x_A_eq[nsteps][1] = 1
+		big_H = block_diag(big_I, big_I)
+		big_h = np.concatenate((big_0, big_0))
+
+		x_A_eq[nsteps][0] = 1
+
 		y_A_eq = x_A_eq
+
 		big_A_eq = block_diag(x_A_eq, y_A_eq)
-
-		x_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(x_Ba_ineq, 0))), x_Ba_ineq))
-		x_Ba_ineq[nsteps-1][0] = 1
-		x_Ba_ineq[2 * nsteps-1][0] = -1
-
-		y_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(y_Ba_ineq, 0))), y_Ba_ineq))
-		y_Ba_ineq[nsteps-1][0] = 1
-		y_Ba_ineq[2 * nsteps-1][0] = -1
-
-		big_A_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
+		big_A_ineq = block_diag(x_A_ineq, y_A_ineq)
 
 	# print(big_H)
-	# print((big_h))
-	# print((big_A_ineq))
-	# print((big_B_ineq))
-	# print((big_A_eq))
-	# print((big_B_eq))
+	# print(big_h)
+	# print(big_A_ineq)
+	# print(big_B_ineq)
+	# print(big_A_eq)
+	# print(big_B_eq)
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
 	# print(np.shape(big_A_ineq))
@@ -186,90 +188,91 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# print(np.shape(big_A_eq))
 	# print(np.shape(big_B_eq))
 
-	#Obstacle free path
-	# t1_start = perf_counter()
-	# u_in_qp = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-	# t1_stop = perf_counter()
-	# print(u_in_qp, t1_stop - t1_start)
-
 	t1_start = perf_counter()
-	u = cp.Variable(4*nsteps + 2)
-	u_in = cp.Problem(cp.Minimize((1/2)*cp.quad_form(u, big_H) + big_h.T @ u),
-                 [big_A_ineq @ u <= big_B_ineq,
-                  big_A_eq @ u == big_B_eq])
-	u_in.solve(cp.OSQP)
+	# s = cp.Variable(4*nsteps+2)
+	state_cont_pair = cp.Variable(4*nsteps + 2)
+	prob = cp.Problem(cp.Minimize((1/2)*cp.quad_form(state_cont_pair, big_H) + big_h.T @ state_cont_pair),
+                 [big_A_ineq @ state_cont_pair <= big_B_ineq,
+                  big_A_eq @ state_cont_pair == big_B_eq])
+	prob.solve()
 	t1_stop = perf_counter()
 
-	print(u.value, t1_stop - t1_start)
-	traj = u.value
+	#Format for solution for N steps is [x_0,..., x_{N+1}, vx_0, ... vx_N, y_0,..., y_{N+1}, vy_0, ... vy_N]
+	obs_free_traj = state_cont_pair.value
+	gamma = 0.2
+
+	print(obs_free_traj)
+
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
+		#Transform x_obs wrt to destination
 		x_obs = -np.subtract(x_destination, x_obs)
 		y_obs = -np.subtract(y_destination, y_obs)
-		# print()
-		# vx_obs = np.add(vx_obs, traj[nsteps+1])
-		# vy_obs = np.add(vy_obs, traj[3 * nsteps + 2])
 		r_obs = np.add(r_obs, r_vehicle)
 		iterations = 0
 
-		while(d > 0.1 and iterations < 10):
+		y_offset = 2 * nsteps + 1
+
+		while((d_norm >= 0.1) and (iterations <= 10)):
 			iterations = iterations + 1
 			
-			x_in = traj[1:nsteps+1]
-			y_in = traj[2 * nsteps + 2:2 * nsteps + 1 + nsteps + 1 ]
-			
+			x_prev = obs_free_traj[0:nsteps + 1]
+			y_prev = obs_free_traj[y_offset:y_offset + nsteps + 1]
+
 			#Ai*d <= Bi - Ai * x
 			A_ineq_d = big_A_ineq
-			B_ineq_d = big_B_ineq - np.dot(big_A_ineq, traj)
+			B_ineq_d = big_B_ineq - big_A_ineq @ obs_free_traj
 
 			#Ae*d = be - Ae * x
 			A_eq_d = big_A_eq
-			b_eq_d = big_B_eq - np.dot(big_A_eq, traj)
-				
-			# x_proj = np.zeros(np.shape(x_in))
-			# y_proj = np.zeros(np.shape(y_in))
+			b_eq_d = big_B_eq - big_A_eq @ obs_free_traj
 
+			soc_constraints = []
+				
 			for j in range(0, len(obstacles[0])):
-				barrier_cons_A = np.zeros((nsteps, 4 * nsteps + 2))
-				barrier_cons_B = np.zeros(nsteps)
+				# x_proj, y_proj = project_to_obstacles(x_prev, y_prev, x_obs[j], y_obs[j], r_obs[j], nsteps)
 
+				for k in range(0,nsteps):
+					#s_prev
+					s_p = cp.atoms.vstack((x_prev[k], y_prev[k]))
 
-				for i in range(1, nsteps):
-					prediction_time = - i * interval
-					x_proj, y_proj = project_to_obstacles(x_in, y_in, x_obs[j] - vx_obs[j] * prediction_time, y_obs[j] - vy_obs[j] * prediction_time, r_obs[j], nsteps)
-					# print(j, len(x_obs), len(y_obs), len(vx_obs))
+					#s_{k+1}
+					s_k_plus_1 = cp.atoms.vstack((x_prev[k+1], y_prev[k+1]))
+					# CAk = np.array((x_prev[k+1] - x_obs[j],y_prev[k+1] - y_obs[j]))
 
-					#h = r**2 - x(i)**2 - y(i)**2
-					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] - vy_obs[j] * prediction_time))**2
-					#h_prev = r**2 - x(i-1)**2 - y(i-1)**2
-					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i-1] - (y_obs[j] - vy_obs[j] * prediction_time))**2
-					gamma = 0.2
+					#s_k 
+					s_k = cp.atoms.vstack((x_prev[k], y_prev[k]))
 
-					# dist = math.sqrt((x_in[i] - x_obs[j])**2 + (y_in[i] - y_obs[j])**2)
-					# x_proj[i] = x_obs[j] + r_obs[j] / dist * (x_in[i] - x_obs[j])
-					# y_proj[i] = y_obs[j] + r_obs[j] / dist * (y_in[i] - y_obs[j])
+					#s_o
+					s_o = cp.atoms.vstack((x_obs[j], y_obs[j]))
 
-					#Ai <= -2 * (x(i) - x_o)
-					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] - vx_obs[j] * prediction_time))
-					#Ai <= -2 * (y(i) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + 1 + i] = -2 * (y_proj[i] - (y_obs[j] - vy_obs[j] * prediction_time))
+					#s_prev - s_o
+					sp_minus_so = s_p - s_o
+
+					#LHS, ||s_{k+1} - s_obs||^2
+					CAk_norm = cp.atoms.norm(s_k_plus_1 - s_o)
+					LHS = cp.atoms.sum_squares(CAk_norm)
+
+					#RHS, r^2 * (1-gamma) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
+					RHS = r_obs ** 2 * (1 - gamma) + gamma * cp.atoms.sum_squares(cp.atoms.norm(sp_minus_so)) - 2 * gamma * (sp_minus_so.T @ s_p) + 2 * gamma * (sp_minus_so.T @ s_k)
 					
-					#Ai <= gamma * 2 * (x(i-1) - x_o)
-					barrier_cons_A[i][i] = gamma * 2 * (x_proj[i-1] - (x_obs[j] - vx_obs[j] * prediction_time))
-					#Ai <= gamma * 2 * (y(i-1) - y_o)
-					barrier_cons_A[i][1 + 2 * nsteps + i] = gamma * 2 * (y_proj[i-1] - (y_obs[j] - vy_obs[j] * prediction_time))
-					# barrier_cons_B[i] = - h #- 0.9 * h0
+					soc_constraints.append(LHS <= RHS)
 
-					#h(k+1) >= gamma * h(k)
-					barrier_cons_B[i] = - h + gamma * h_prev
-					# print barrier_cons_A, barrier_cons_B
-
-				A_ineq_d = np.vstack((A_ineq_d, barrier_cons_A))
-				B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
+					print(soc_constraints[0])
 				
-			d_traj_out = qp_matrix.cvxopt_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
-			traj += d_traj_out
-			d = np.linalg.norm(d_traj_out)
+			prob = cp.Problem(cp.Minimize((1/2)*cp.quad_form(state_cont_pair, big_H) + big_h.T @ state_cont_pair),
+		                 [A_ineq_d @ state_cont_pair <= B_ineq_d,
+		                  A_eq_d @ state_cont_pair == b_eq_d] + soc_constraints)
+			# prob = cp.Problem(cp.Minimize((1/2)*cp.quad_form(state_cont_pair, big_H) + big_h.T @ state_cont_pair),soc_constraints)
+			prob.solve()
+			d_traj_out = state_cont_pair.value
+
+			obs_free_traj += d_traj_out
+			d_norm = np.linalg.norm(obs_free_traj)
+
+			print("Solution:\t",state_cont_pair.value)
+			print("Status:\t", prob.status)
+			print("d_norm:\t",d_norm)
 
 	# print(iterations, d)
 	# print big_H
@@ -279,39 +282,20 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# print A_eq_d
 	# print b_eq_d
 	# print x_A_eq
-	
+	obs_traj = obs_free_traj
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
-	# if(True):
-		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj}
+		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": obs_traj}
 
 		prev_nsteps = nsteps
 		prev_interval = interval
 
 	else:
-		variables = {"solution": traj}
+		variables = {"solution": obs_traj}
 
-	return traj[nsteps+1], traj[3 * nsteps+2], variables
+	return obs_traj[nsteps+1], obs_traj[3 * nsteps+2], variables
 
 if __name__ == "__main__":
 	np.set_printoptions(precision=3, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver
-	# lin_u, ang_u, update_var = MPC_solver(x_actual=.7, x_destination=.7, x_limit=200, x_origin=0, y_actual = .7, y_destination = .7, y_origin = 0,y_limit = 200 , nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1]], x_vel_limit = 2, y_vel_limit = 2)
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[7.75,1,0],final_pose=[-8.75,0,0], x_limit = 1, y_limit = 1, nsteps=3, interval = .05 ,variables=None, obstacles = [[.5],[.5],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
-	print(prev_nsteps)
-	# MPC_solver(0, 2, 100, 0, 0, .5, 100, 0, 10, variables=update_var)
-	# MPC_solver(0, 3, 100, 0, 1, 4, 100, 0, 10, variables=update_var)
-	# c = matrix([-2., 1., 5.])
-
-	# G = [ matrix( [[12., 13., 12.], [6., -3., -12.], [-5., -5., 6.]] ) ]
-
-	# G += [ matrix( [[3., 3., -1., 1.], [-6., -6., -9., 19.], [10., -2., -2., -3.]] ) ]
-
-	# h = [ matrix( [-12., -3., -2.] ),  matrix( [27., 0., 3., -42.] ) ]
-
-	# star1 = perf_counter()
-	# sol = solvers.socp(c, Gq = G, hq = h)
-	# stop1 = perf_counter()
-
-	# print('Time', stop1 - star1)
-	# sol['status']
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[10,0,0],final_pose=[10,0,0], x_limit = 100, y_limit = 100, nsteps=1, interval = 1 ,variables=None, obstacles = [[50],[50],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
