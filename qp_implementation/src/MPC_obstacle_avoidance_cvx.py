@@ -234,17 +234,16 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 				for k in range(0,nsteps):
 					#s_prev
-					s_p = cp.atoms.vstack((x_prev[k], y_prev[k]))
+					s_p = np.vstack((x_prev[k], y_prev[k]))
 
 					#s_{k+1}
 					s_k_plus_1 = cp.atoms.vstack((x_prev[k+1], y_prev[k+1]))
-					# CAk = np.array((x_prev[k+1] - x_obs[j],y_prev[k+1] - y_obs[j]))
 
 					#s_k 
 					s_k = cp.atoms.vstack((x_prev[k], y_prev[k]))
 
 					#s_o
-					s_o = cp.atoms.vstack((x_obs[j], y_obs[j]))
+					s_o = np.vstack((x_obs[j], y_obs[j]))
 
 					#s_prev - s_o
 					sp_minus_so = s_p - s_o
@@ -254,7 +253,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					LHS = cp.atoms.sum_squares(CAk_norm)
 
 					#RHS, r^2 * (1-gamma) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
-					RHS = r_obs ** 2 * (1 - gamma) + gamma * cp.atoms.sum_squares(cp.atoms.norm(sp_minus_so)) - 2 * gamma * (sp_minus_so.T @ s_p) + 2 * gamma * (sp_minus_so.T @ s_k)
+					RHS = r_obs ** 2 * (1 - gamma) + gamma * np.square(np.linalg.norm(sp_minus_so)) - 2 * gamma * (sp_minus_so.T @ s_p) + 2 * gamma * (sp_minus_so.T @ s_k)
 					
 					soc_constraints.append(LHS <= RHS)
 
@@ -266,11 +265,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			# prob = cp.Problem(cp.Minimize((1/2)*cp.quad_form(state_cont_pair, big_H) + big_h.T @ state_cont_pair),soc_constraints)
 			prob.solve()
 			d_traj_out = state_cont_pair.value
+			print("Solution:\t",state_cont_pair.value)
 
 			obs_free_traj += d_traj_out
 			d_norm = np.linalg.norm(obs_free_traj)
 
-			print("Solution:\t",state_cont_pair.value)
 			print("Status:\t", prob.status)
 			print("d_norm:\t",d_norm)
 
@@ -297,5 +296,6 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 if __name__ == "__main__":
 	np.set_printoptions(precision=3, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
-	#Some calls for standalone testing of solver
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[10,0,0],final_pose=[10,0,0], x_limit = 100, y_limit = 100, nsteps=1, interval = 1 ,variables=None, obstacles = [[50],[50],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
+	#Some calls for standalone testing of solver, current pose is the pose of robot wrt to destination, and final_pose is wrt global frame. 
+	#Obstacles array format = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[-10,0,0],final_pose=[10,0,0], x_limit = 100, y_limit = 100, nsteps=1, interval = 1 ,variables=None, obstacles = [[50],[50],[.1],[0.1],[0.1]], x_vel_limit = 2, y_vel_limit = 2)
