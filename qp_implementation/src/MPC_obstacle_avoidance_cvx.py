@@ -5,8 +5,6 @@ from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
 from time import perf_counter
-from cvxopt import matrix, solvers
-
 
 prev_nsteps = 0
 prev_interval = 0
@@ -75,7 +73,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		vy_obs = obstacles[4]
 
 	r_vehicle = kwargs.pop("r_vehicle", 0)
-
+	print(obstacles)
 	if(kwargs):
 		raise TypeError('Unexpected **kwargs: %r' % kwargs)
 
@@ -117,7 +115,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		#Row stack dynamic and terminal LHS constraint
 		x_A_eq = np.row_stack((dyn_A, term_A))
 
-	
+	#x_0 = X_s - X_d (input in this form while calling this function)
 	x_term_b = np.array([x_actual])
 	y_term_b = np.array([y_actual])
 	
@@ -168,6 +166,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		big_H = block_diag(big_I, big_I)
 		big_h = np.concatenate((big_0, big_0))
 
+		#For x_0, terminal constraint
 		x_A_eq[nsteps][0] = 1
 
 		y_A_eq = x_A_eq
@@ -175,12 +174,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		big_A_eq = block_diag(x_A_eq, y_A_eq)
 		big_A_ineq = block_diag(x_A_ineq, y_A_ineq)
 
-	# print(big_H)
-	# print(big_h)
-	# print(big_A_ineq)
-	# print(big_B_ineq)
-	# print(big_A_eq)
-	# print(big_B_eq)
+	print("Q\n",big_H)
+	print("R\n",big_h)
+	print("Inequality LHS\n",big_A_ineq)
+	print("Inequality RHS\n",big_B_ineq)
+	print("Equality LHS\n",big_A_eq)
+	print("Equality RHS\n",big_B_eq)
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
 	# print(np.shape(big_A_ineq))
@@ -201,7 +200,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	obs_free_traj = state_cont_pair.value
 	gamma = 0.2
 
-	print(obs_free_traj)
+	print("Obs free soln.\n",obs_free_traj)
 
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -226,6 +225,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			#Ae*d = be - Ae * x
 			A_eq_d = big_A_eq
 			b_eq_d = big_B_eq - big_A_eq @ obs_free_traj
+			
+			print("A, B when running succ. cvx.")
+			print("Inequality LHS\n",big_A_ineq)
+			print("Inequality RHS\n",big_B_ineq)
+			print("Equality LHS\n",big_A_eq)
+			print("Equality RHS\n",big_B_eq)
 
 			soc_constraints = []
 				
@@ -244,6 +249,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 					#s_o
 					s_o = np.vstack((x_obs[j], y_obs[j]))
+					print("s_o\n",s_o)
 
 					#s_prev - s_o
 					sp_minus_so = s_p - s_o
@@ -274,13 +280,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			print("d_norm:\t",d_norm)
 
 	# print(iterations, d)
-	# print big_H
-	# print big_h
-	# print A_ineq_d
-	# print B_ineq_d
-	# print A_eq_d
-	# print b_eq_d
-	# print x_A_eq
+
 	obs_traj = obs_free_traj
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
