@@ -199,8 +199,6 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
                   big_A_eq @ state_cont_pair_1 == big_B_eq])
 	prob.solve()
 	print("SCPair\t",state_cont_pair_1.value)
-	t1_stop = perf_counter()
-	print()
 
 	#Format for solution for N steps is [x_0,..., x_{N+1}, vx_0, ... vx_N, y_0,..., y_{N+1}, vy_0, ... vy_N]
 	obs_free_traj = state_cont_pair_1.value
@@ -223,7 +221,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		iterations = 0
 
 
-		while((d_norm >= 0.1) and (iterations <= 1)):
+		while((d_norm >= 0.1) and (iterations < 1)):
 			iterations = iterations + 1
 			
 			x_prev = obs_free_traj[0:nsteps + 1]
@@ -289,6 +287,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			print("d_norm:\t",d_norm)
 
 	# print(iterations, d)
+	t1_stop = perf_counter()
+	print("Time\t",t1_stop - t1_start)
 
 	obs_traj = obs_free_traj
 
@@ -323,4 +323,4 @@ if __name__ == "__main__":
 	np.set_printoptions(precision=3, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver, current pose is the pose of robot wrt to destination, and final_pose is wrt global frame. 
 	#Obstacles array format = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[5,0,0],final_pose=[10,0,0], x_limit = 100000, y_limit = 100000, nsteps=40, interval = 0.1,variables=None, obstacles = [[5],[-1],[3],[0],[0]], x_vel_limit = 1000, y_vel_limit = 1000)
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[5,0,0],final_pose=[10,0,0], x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=None, obstacles = [[5],[-1],[3],[0],[0]], x_vel_limit = 1000, y_vel_limit = 1000)
