@@ -22,7 +22,8 @@ from tf.transformations import euler_from_quaternion
 import numpy as np
 from numpy import array
 from qp_matrix import qp_q_dot_des_array
-from MPC_obstacle_avoidance import MPC_solver
+# from MPC_obstacle_avoidance import MPC_solver
+from MPC_obstacle_avoidance_cvx import MPC_solver
 
 global R, args, uav_x_vel, uav_y_vel, main_thread, nsteps_slider, interval_slider
 
@@ -39,7 +40,7 @@ x_current = y_current = z_current                   = 0.0
 x_home = y_home = z_home                            = 0.0
 ekf_x = ekf_y = ekf_z                               = 0
 x_destination = y_destination =  z_destination      = 0.0
-limit_x = limit_y = limit_z                         = 5.
+limit_x = limit_y = limit_z                         = 500.
 roll = pitch = yaw                                  = 0.0
 TIMEOUT                                             = 0.5
 y_homeyaw                                           = 0
@@ -365,8 +366,8 @@ def main():
         pub1.publish(setpoint_msg)
         rate.sleep()
     
-    set_arming(True)
-    set_mode(0, 'OFFBOARD')
+    # set_arming(True)
+    # set_mode(0, 'OFFBOARD')
     last_request = rospy.Time.now()
     
     main_thread = threading.currentThread()
@@ -408,9 +409,6 @@ def main():
         dz = z_destination - z_current
         current_pose = [dx, dy, dz]
 
-        # if(len(x_obs) != 0):
-        #     obstacles = [np.append(x_obs, obstacles[0]), np.append(y_obs, obstacles[1]), np.append(r_obs, obstacles[2]), np.append(vx_obs, obstacles[3]), np.append(vy_obs, obstacles[4])]
-
         timer = time.time()
 
         try:
@@ -443,13 +441,13 @@ def main():
         #print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
         #print(current_time)
         debug.value = str(avg_time)
-        debug2.value = str(current_time)
+        debug2.value = str([dx, dy, dz]) # str(current_time)
 
         debug.display()
         debug2.display()
 
-        x_array = cached_var.get("solution")[1:n+1]
-        y_array = cached_var.get("solution")[2 * n + 2:2 * n + 1 + n + 1]
+        x_array = cached_var.get("solution")[0:n+1]
+        y_array = cached_var.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
 
         z_velocity_des = 0.5 * dz
         
@@ -458,17 +456,12 @@ def main():
         theta = math.atan2(y_velocity_des, x_velocity_des)
         x_vel_limit = lin_vel_lim * math.cos(theta)
         y_vel_limit = lin_vel_lim * math.sin(theta)
-        # print(x_vel_limit, y_vel_limit, math.degrees(theta))
+
         x_velocity_des = x_velocity_des if math.fabs(x_velocity_des) < x_vel_limit else x_vel_limit# * math.copysign(1, x_velocity_des)
         y_velocity_des = y_velocity_des if math.fabs(y_velocity_des) < y_vel_limit else y_vel_limit# * math.copysign(1, y_velocity_des)
 
         pub1.publish(twist_obj(x_velocity_des, y_velocity_des, z_velocity_des, 0.0, 0.0, 0.0))
         
-        # if(len(obstacles) > 0):
-        #     print(current_pose, obstacles[0], obstacles[1])
-        # print (x_current, y_current, x_home, y_home, x_velocity_des, y_velocity_des, z_velocity_des)
-        # print((x_current - x_home), (y_current - y_home), x_destination - x_home, y_destination - y_home)
-        # print(x_destination, y_destination)
 
         desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
         desired_point.header.frame_id = 'base_link'
