@@ -94,13 +94,6 @@ class App(npyscreen.NPSAppManaged):
     def onStart(self):
         self.addForm('MAIN', form_object, name = "RBCCPS MPC CONTROLLER")
 
-def imu_cb(data):
-    global quat
-    quat = data.orientation
-    # quat = (orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w)
-    # (roll, pitch, yaw) = euler_from_quaternion(quat)
-    # (roll, pitch, yaw) = (roll * 180.0/3.1416, pitch * 180.0/3.1416, yaw  * 180.0/3.1416)
-
 
 def obstacles_cb(data):
     global x_obs, y_obs, r_obs, obstacles, x_velocity_des, y_velocity_des
@@ -108,11 +101,6 @@ def obstacles_cb(data):
     if(data != None):
         x_obs = np.array([obj.center.x for obj in data.circles])
         y_obs = np.array([obj.center.y for obj in data.circles])
-        # Using + sign for subtraction because desired velocities are negated
-        # vx_obs = np.array([obj.velocity.x + (0 if x_velocity_des < 0.1 else x_velocity_des) for obj in data.circles])
-        # vy_obs = np.array([obj.velocity.y + (0 if y_velocity_des < 0.1 else y_velocity_des) for obj in data.circles])
-        # vx_obs = np.array([obj.velocity.x + x_velocity_des for obj in data.circles])
-        # vy_obs = np.array([obj.velocity.y + y_velocity_des for obj in data.circles])
         vx_obs = np.array([obj.velocity.x for obj in data.circles])
         vy_obs = np.array([obj.velocity.y for obj in data.circles])
         r_obs = np.array([obj.radius for obj in data.circles])
@@ -150,16 +138,6 @@ def gps_local_cb(data):
     quat = data.pose.pose.orientation
 
     if x_home_recorded is False and x_current != 0 and y_current != 0:
-        # t = TransformStamped()
-
-        # t.header.stamp = rospy.Time.now() - rospy.Duration(discard_samples * .1)
-        # t.header.frame_id = "map"
-        # t.child_frame_id = "base_link"
-        # t.transform.translation = pos
-        # t.transform.rotation = quat
-
-        # br.sendTransform(t)
-
         x_home = x_current - pos.x
         y_home = y_current - pos.y
         discard_samples = discard_samples - 1
@@ -169,26 +147,6 @@ def gps_local_cb(data):
             y_destination = y_current
             start_y = y_home
             x_home_recorded = True
-
-    # t = TransformStamped()
-
-    # t.header.stamp = rospy.Time.now() + rospy.Duration(1)
-    # t.header.frame_id = "map"
-    # if(args.individual):
-    #     t.child_frame_id = "base_link"
-
-    # else:
-    #     t.child_frame_id = args.namespace+"/base_link"
-    # t.transform.translation.x = pos.x
-    # t.transform.translation.y = pos.y
-    # t.transform.translation.z = z_current
-    # t.transform.rotation.x = 0
-    # t.transform.rotation.y = 0
-    # t.transform.rotation.z = 0
-    # t.transform.rotation.w = 1
-
-    # br.sendTransform(t)
-    # br2.sendTransform((pos.x, pos.y, pos.z), (0, 0, 0, 1), rospy.Time.now(), "base_scan", "map")
 
 def pose_cb(data):
     global ekf_x, ekf_y,ekf_z
@@ -296,7 +254,6 @@ def main():
 
     rate = rospy.Rate(10.0)
     
-    # rospy.Subscriber("/mavros/imu/data", Imu, imu_cb)
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
     if(gps_rate == 0):
         rospy.Subscriber(args.namespace+"/mavros/global_position/local", Odometry, gps_local_cb)
@@ -366,8 +323,8 @@ def main():
         pub1.publish(setpoint_msg)
         rate.sleep()
     
-    # set_arming(True)
-    # set_mode(0, 'OFFBOARD')
+    set_arming(True)
+    set_mode(0, 'OFFBOARD')
     last_request = rospy.Time.now()
     
     main_thread = threading.currentThread()
@@ -394,18 +351,18 @@ def main():
             sleep_flag = True
 
         transform_time = rospy.Time.now()
-        dest_point = PointStamped(header=Header(stamp=(transform_time), frame_id='map'))
-        dest_point.point.x = final_pose[0]
-        dest_point.point.y = final_pose[1]
-        dest_point.point.z = final_pose[2]
-        if(args.individual):
-            p = tf_buff.transform(dest_point, "base_link", timeout=rospy.Duration(0.05))
+        # dest_point = PointStamped(header=Header(stamp=(transform_time), frame_id='map'))
+        # dest_point.point.x = final_pose[0]
+        # dest_point.point.y = final_pose[1]
+        # dest_point.point.z = final_pose[2]
+        # if(args.individual):
+        #     p = tf_buff.transform(dest_point, "base_link", timeout=rospy.Duration(0.05))
 
-        else:
-            p = tf_buff.transform(dest_point, args.namespace+"/base_link", timeout=rospy.Duration(0.05))            
+        # else:
+        #     p = tf_buff.transform(dest_point, args.namespace+"/base_link", timeout=rospy.Duration(0.05))            
     
-        dx = -p.point.x
-        dy = -p.point.y
+        dx = x_current #-p.point.x
+        dy = y_current #-p.point.y
         dz = z_destination - z_current
         current_pose = [dx, dy, dz]
 
@@ -441,7 +398,7 @@ def main():
         #print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
         #print(current_time)
         debug.value = str(avg_time)
-        debug2.value = str([dx, dy, dz]) # str(current_time)
+        debug2.value = str(current_time)
 
         debug.display()
         debug2.display()
@@ -463,12 +420,12 @@ def main():
         pub1.publish(twist_obj(x_velocity_des, y_velocity_des, z_velocity_des, 0.0, 0.0, 0.0))
         
 
-        desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        desired_point.header.frame_id = 'base_link'
-        desired_point.point.x = p.point.x# - x_home
-        desired_point.point.y = p.point.y# - y_home
-        desired_point.point.z = 0
-        pub.publish(desired_point)
+        # desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        # desired_point.header.frame_id = 'base_link'
+        # desired_point.point.x = p.point.x# - x_home
+        # desired_point.point.y = p.point.y# - y_home
+        # desired_point.point.z = 0
+        # pub.publish(desired_point)
 
         if len(obstacles) > 0 and len(obstacles[0]) > 0:
             gps_point = PointStamped(header=Header(stamp=rospy.get_rostime()))

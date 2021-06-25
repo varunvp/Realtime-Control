@@ -38,12 +38,14 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		dict -- Cached variables
 
 	"""
+	t1_start = perf_counter()
 	x_origin, y_origin, theta_init = init_pose
 	x_actual, y_actual, theta_actual = current_pose
 	x_destination, y_destination, theta_destination = final_pose
 
-	# x_actual = current_pose[0] - x_destination
-	# y_actual = current_pose[1] - y_destination
+	x_actual = current_pose[0] - x_destination
+	y_actual = current_pose[1] - y_destination
+
 	delta = 0.5
 	d_norm = 10000
 
@@ -175,10 +177,6 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# print(np.shape(big_A_eq))
 	# print(np.shape(big_B_eq))
 
-	t1_start = perf_counter()
-
-	# t1_stop = perf_counter()
-	# print("Time\t", t1_stop - t1_start)
 
 	#Format for solution for N steps is [x_0,..., x_{N+1}, vx_0, ... vx_N, y_0,..., y_{N+1}, vy_0, ... vy_N]
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
@@ -188,16 +186,33 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	gamma = 0.0001
 
 	y_offset = 2 * nsteps + 1
-	# x_prev_free = obs_free_traj[0:nsteps + 1]
-	# y_prev_free = obs_free_traj[y_offset:y_offset + nsteps + 1]
+	x_prev_free = obs_free_traj[0:nsteps + 1]
+	y_prev_free = obs_free_traj[y_offset:y_offset + nsteps + 1]
 	# print("Obs free soln.\n",obs_free_traj)
 
-	state_cont_pair_1 = cp.Variable(4*nsteps + 2)
 
-	objective = (1/2)*cp.quad_form(state_cont_pair_1, big_H) + big_h.T @ state_cont_pair_1
-	prob = cp.Problem(cp.Minimize(objective),
-                 [big_A_ineq @ state_cont_pair_1 <= big_B_ineq,
-                  big_A_eq @ state_cont_pair_1 == big_B_eq])
+	if(variables):
+		prob = variables.get("prob")
+		state_cont_pair = prob.variables()[0]
+
+		prob.parameters()[0].value = big_A_ineq
+		prob.parameters()[1].value = big_B_ineq
+		prob.parameters()[2].value = big_A_eq
+		prob.parameters()[3].value = big_B_eq
+
+	else:
+		state_cont_pair = cp.Variable(4*nsteps + 2)
+		ineq_lhs, ineq_rhs, eq_lhs, eq_rhs = cp.Parameter(np.shape(big_A_ineq)), cp.Parameter(np.shape(big_B_ineq)), cp.Parameter(np.shape(big_A_eq)), cp.Parameter(np.shape(big_B_eq))
+
+		ineq_lhs.value = big_A_ineq
+		ineq_rhs.value = big_B_ineq
+		eq_lhs.value = big_A_eq
+		eq_rhs.value = big_B_eq
+
+		objective = (1/2)*cp.quad_form(state_cont_pair, big_H) + big_h.T @ state_cont_pair
+		prob = cp.Problem(cp.Minimize(objective),
+                 [ineq_lhs @ state_cont_pair <= ineq_rhs,
+                  eq_lhs @ state_cont_pair == eq_rhs])
 
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -215,52 +230,67 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 			soc_constraints = []
 
-			# s_p_plus_1 = np.concatenate((x_prev[1:] - x_obs[0], y_prev[1:] - y_obs[0]))
-			# print(s_p_plus_1)
+			#s_prev, k + 1
+			s_p_plus_1 = np.concatenate((x_prev[1:], y_prev[1:]))
 				
 			for j in range(0, len(obstacles[0])):
 				x_obs_motion = x_obs[j] + np.arange(0, nsteps, 1) * interval * vx_obs[j]
 				y_obs_motion = y_obs[j] + np.arange(0, nsteps, 1) * interval * vy_obs[j]
 
-				#s_prev, k + 1
-				s_p_plus_1 = np.concatenate((x_prev[1:], y_prev[1:]))
-
-				#s_{k+1} - 
-				s_k_minus_so = cp.hstack((state_cont_pair_1[:nsteps] - x_obs_motion , state_cont_pair_1[y_offset:y_offset+nsteps] - y_obs_motion))
+				#s_k - s_o 
+				s_k_minus_so = cp.hstack((state_cont_pair[:nsteps] - x_obs_motion , state_cont_pair[y_offset:y_offset+nsteps] - y_obs_motion))
 				s_k_minus_so = cp.reshape(s_k_minus_so,(nsteps,2))
 
-				#s_k 
-				s_k_plus_1 = cp.hstack((state_cont_pair_1[1:nsteps+1], state_cont_pair_1[y_offset + 1: y_offset + nsteps + 1]))
+				#s_{k+1}
+				s_k_plus_1 = cp.hstack((state_cont_pair[1:nsteps+1], state_cont_pair[y_offset + 1: y_offset + nsteps + 1]))
 
+				#||s_{k+1} - s_obs||^2
 				sq_norm_term = np.square(np.linalg.norm(np.reshape(np.concatenate((x_prev[1:] - x_obs_motion, y_prev[1:] - y_obs_motion)), (nsteps,2), order='F'), axis=1))
+
+				#(s_prev, k + 1) - s_o
 				sp_plus_1_minus_so = np.column_stack((np.diag(x_prev[1:] - x_obs_motion), np.diag(y_prev[1:] - y_obs_motion)))
 
-				#LHS, ||s_{k+1} - s_obs||^2
-				LHS = gamma * cp.sum(cp.square(s_k_minus_so), axis = 1, keepdims=False)
 
-				#RHS, r^2 * (1-gamma) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
-				# RHS = r_obs ** 2 * (gamma - 1) + np.square(np.linalg.norm(sp_plus_1_minus_so)) - 2 * np.dot(sp_plus_1_minus_so,s_p_plus_1) + 2 * sp_plus_1_minus_so @ s_k_plus_1
-				RHS = r_obs[j] ** 2 * (gamma - 1) + sq_norm_term - 2 * sp_plus_1_minus_so @ s_p_plus_1 + 2 * sp_plus_1_minus_so @ s_k_plus_1
+				if(variables):
+					prob.parameters()[4+j*3+0].value = sq_norm_term
+					prob.parameters()[4+j*3+1].value = sp_plus_1_minus_so
+					prob.parameters()[4+j*3+2].value = s_p_plus_1
 
-				# print("RHS\n",RHS)
-				# print("LHS\n",LHS)
+				else:
+					sq_norm_param, sp_plus_1_minus_so_param, s_p_plus_1_param = cp.Parameter(sq_norm_term.shape), cp.Parameter(sp_plus_1_minus_so.shape), cp.Parameter(s_p_plus_1.shape)
 
-				soc_constraints.append(LHS <= RHS)
+					sq_norm_param.value = sq_norm_term
+					sp_plus_1_minus_so_param.value = sp_plus_1_minus_so
+					s_p_plus_1_param.value = s_p_plus_1
+
+					#LHS, gamma * ||s_{k+1} - s_obs||^2
+					LHS = gamma * cp.sum(cp.square(s_k_minus_so), axis = 1, keepdims=False)
+
+					#RHS, r^2 * (gamma - 1) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
+					RHS = r_obs[j] ** 2 * (gamma - 1) + sq_norm_param - 2 * sp_plus_1_minus_so_param @ s_p_plus_1_param + 2 * sp_plus_1_minus_so_param @ s_k_plus_1
+
+					# print("RHS\n",RHS)
+					# print("LHS\n",LHS)
+
+					soc_constraints.append(LHS <= RHS)
 					# t2_stop = perf_counter()
 					# print("Expression time\t",t2_stop - t2_start)
 
 			# print(soc_constraints[0])
 
 			t3_start = perf_counter()
-			prob2 = cp.Problem(prob.objective, prob.constraints + soc_constraints)
 
-			# prob = cp.Problem(cp.Minimize((1/2)*cp.quad_form(state_cont_pair_1, big_H) + big_h.T @ state_cont_pair_1),soc_constraints)
-			prob2.solve()
-			d_traj_out = state_cont_pair_1.value
-			# print("Solution:\t",state_cont_pair_1.value)
+			if(variables):
+				pass
 
-			obs_free_traj = d_traj_out
-			d_norm = np.linalg.norm(obs_free_traj)
+			else:
+				prob = cp.Problem(prob.objective, prob.constraints + soc_constraints)
+
+			prob.solve(verbose=False)
+
+			obs_free_traj = state_cont_pair.value
+			# print("Solution:\t",state_cont_pair.value)
+			# d_norm = np.linalg.norm(obs_free_traj)
 			t3_stop = perf_counter()
 
 			# print("Solver time\t", t3_stop - t3_start)
@@ -268,7 +298,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			# print("d_norm:\t",d_norm)
 
 	t1_stop = perf_counter()
-	# print("Time\t", t1_stop - t1_start)
+	print("Time\t", t1_stop - t1_start)
 	# print(iterations, d)
 
 	obs_traj = obs_free_traj
@@ -296,7 +326,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# plt.show()
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": obs_traj}
+		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": obs_traj, "prob": prob}
 
 		prev_nsteps = nsteps
 		prev_interval = interval
@@ -310,4 +340,6 @@ if __name__ == "__main__":
 	np.set_printoptions(precision=3, threshold=None, edgeitems=None, linewidth=1000, suppress=None, nanstr=None, infstr=None, formatter=None)
 	#Some calls for standalone testing of solver, current pose is the pose of robot wrt to destination, and final_pose is wrt global frame. 
 	#Obstacles array format = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[0,0,0],final_pose=[10,0,0], x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=None, obstacles = [[5],[-1],[3],[1],[-3]], x_vel_limit = 1000, y_vel_limit = 1000)
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[0,0,0],final_pose=[10,0,0], x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=None, obstacles = [[5,2,-2],[0,4,3],[2,1,1],[1,0,0],[-1,0,0]])
+	for i in range(0,3):
+		lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[0,0,0],final_pose=[10,0,0], x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=update_var, obstacles = [[5],[-1+i],[3],[1],[-1]])

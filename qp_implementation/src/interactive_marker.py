@@ -35,9 +35,8 @@ from qp_planner.msg import Obstacles, CircleObstacle
 from mavros_msgs.msg import HomePosition
 from nav_msgs.msg import Odometry
 
-obstacles = [[], [], [], [], []]
 drone_obstacles = Obstacles()
-drone_obstacles.circles = [CircleObstacle(), CircleObstacle(), CircleObstacle(), CircleObstacle()]
+drone_obstacles.circles = [CircleObstacle(), CircleObstacle(), CircleObstacle()]
 
 rospy.init_node("simple_marker")
 
@@ -69,7 +68,7 @@ def processFeedback4(feedback):
     uav4_pub.publish(dest)
 
 def receive_position_cb(data):
-    global obstacles, drone_obstacles
+    global drone_obstacles
 
     index = int(data.child_frame_id[3])
 
