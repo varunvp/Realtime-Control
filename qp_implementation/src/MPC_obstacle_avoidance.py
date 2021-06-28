@@ -53,6 +53,9 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	x_actual, y_actual, theta_actual = current_pose
 	x_destination, y_destination, theta_destination = final_pose
 
+	x_actual = current_pose[0] - x_destination
+	y_actual = current_pose[1] - y_destination
+
 	delta = 0.5
 	d = 10000
 
@@ -87,17 +90,21 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	timer = time.time()
 
 	if nsteps != prev_nsteps:
-		big_I = np.eye(2*nsteps)
-		big_0 = np.zeros(2*nsteps)
+		big_I = np.eye(2*nsteps + 1)
+		big_I[nsteps][nsteps] = 1000
+		# [0 0 0].T
+		big_0 = np.zeros(2*nsteps + 1)
 	
 	#Get dynamic & terminal constraints
 	if (nsteps != prev_nsteps or interval != prev_interval):
 		# [1 -1  0 t 0 0]
 		# [0  1 -1 0 t 0] 
 		# [0  0  1 0 0 t]
-		dyn_A = np.column_stack((np.eye(nsteps , dtype=float) + np.eye(nsteps, nsteps , 1, dtype=float) * -1, np.eye(nsteps, dtype=float) * interval)) 	
+		dyn_A = np.column_stack((np.eye(nsteps, nsteps+1, dtype=float) + np.eye(nsteps, nsteps+1, 1, dtype=float) * -1, np.eye(nsteps, dtype=float) * interval)) 	
 		dyn_b = np.zeros(nsteps, dtype=float)
-		term_A = np.zeros((2*nsteps), dtype=float)
+
+		# [0  0  0 0 0 0]
+		term_A = np.zeros((2*nsteps+1), dtype=float)
 
 		#Concatenate dynamic and terminal LHS constraint
 		x_A_eq = np.row_stack((dyn_A, term_A))
@@ -119,21 +126,21 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		neg_x_vel_constraint = neg_y_vel_constraint = np.eye(nsteps) * -1
 
 		#Positive and negative box constraints for x and y positions
-		#x(n) * delta +/- x(n+1) <= B
-		pos_x_constraint = np.eye(nsteps) * -delta + np.eye(nsteps, nsteps, 1)
-		neg_x_constraint = np.eye(nsteps) * delta - np.eye(nsteps, nsteps, 1)
+		# -/+ x(n) * delta +/- x(n+1) <= B
+		pos_x_constraint = np.eye(nsteps,nsteps+1) * -delta + np.eye(nsteps, nsteps+1, 1)
+		neg_x_constraint = np.eye(nsteps,nsteps+1) * delta - np.eye(nsteps, nsteps+1, 1)
 		x_pos_constraint = np.row_stack( (pos_x_constraint, neg_x_constraint) )
 
 		#y(n) * delta +/- y(n+1) <= B
-		pos_y_constraint = np.eye(nsteps) * -delta + np.eye(nsteps, nsteps, 1)
-		neg_y_constraint = np.eye(nsteps) * delta - np.eye(nsteps, nsteps, 1)
+		pos_y_constraint = np.eye(nsteps,nsteps+1) * -delta + np.eye(nsteps, nsteps+1, 1)
+		neg_y_constraint = np.eye(nsteps,nsteps+1) * delta - np.eye(nsteps, nsteps+1, 1)
 		y_pos_constraint = np.row_stack((pos_y_constraint, neg_y_constraint))
 
 		#Constraints concatenation
 		x_vel_constraint = np.row_stack((pos_x_vel_constraint, neg_x_vel_constraint))
-		x_Ba_ineq = block_diag(x_pos_constraint, x_vel_constraint)
+		x_A_ineq = block_diag(x_pos_constraint, x_vel_constraint)
 		y_vel_constraints = np.row_stack((pos_y_vel_constraint, neg_y_vel_constraint))
-		y_Ba_ineq = block_diag(y_pos_constraint, y_vel_constraints)
+		y_A_ineq = block_diag(y_pos_constraint, y_vel_constraints)
 
 	#RHS
 	#Positive and negative velocity constraints for x and y velocities
@@ -143,37 +150,29 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Positive and negative box constraints for x and y positions
 	#Ax = +/-((x_orig - x_destination + x_lim) * (1 - delta))
-	x_Bb_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
-	y_Bb_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
-	big_B_ineq = np.concatenate((x_Bb_ineq, y_Bb_ineq))
+	x_B_ineq = np.concatenate((np.ones(nsteps) * ((x_origin - x_destination + x_limit) * (1 - delta)), np.ones(nsteps) * (-(x_origin - x_destination - x_limit) *  (1 - delta)), x_vel_limit_vec))
+	y_B_ineq = np.concatenate((np.ones(nsteps) * ((y_origin - y_destination + y_limit) * (1 - delta)), np.ones(nsteps) * (-(y_origin - y_destination - y_limit) *  (1 - delta)), y_vel_limit_vec))
+	big_B_ineq = np.concatenate((x_B_ineq, y_B_ineq))
 
 	#Relaxation
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		big_H = block_diag([1000], big_I, [1000], big_I)
-		big_h = np.concatenate(([0], big_0, [0], big_0))
+		big_H = block_diag(big_I, big_I)
+		big_h = np.concatenate((big_0, big_0))
 
-		x_A_eq = np.column_stack((np.zeros(nsteps + 1), x_A_eq))
-		x_A_eq[nsteps-1][0] = -1
-		x_A_eq[nsteps][1] = 1
+		#For x_0, terminal constraint
+		x_A_eq[nsteps][0] = 1
+
 		y_A_eq = x_A_eq
+
 		big_A_eq = block_diag(x_A_eq, y_A_eq)
+		big_A_ineq = block_diag(x_A_ineq, y_A_ineq)
 
-		x_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(x_Ba_ineq, 0))), x_Ba_ineq))
-		x_Ba_ineq[nsteps-1][0] = 1
-		x_Ba_ineq[2 * nsteps-1][0] = -1
-
-		y_Ba_ineq = np.column_stack((np.transpose(np.zeros(np.size(y_Ba_ineq, 0))), y_Ba_ineq))
-		y_Ba_ineq[nsteps-1][0] = 1
-		y_Ba_ineq[2 * nsteps-1][0] = -1
-
-		big_A_ineq = block_diag(x_Ba_ineq, y_Ba_ineq)
-
-	print(big_H)
-	print((big_h))
-	print((big_A_ineq))
-	print((big_B_ineq))
-	print((big_A_eq))
-	print((big_B_eq))
+	# print(big_H)
+	# print((big_h))
+	# print((big_A_ineq))
+	# print((big_B_ineq))
+	# print((big_A_eq))
+	# print((big_B_eq))
 	# print(np.shape(big_H))
 	# print(np.shape(big_h))
 	# print(np.shape(big_A_ineq))
@@ -183,7 +182,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-	print(u_in)
+	# print(u_in)
 	traj = u_in
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -267,7 +266,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
 	# if(True):
-		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj}
+		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": traj, "obs_free_sol": u_in}
 
 		prev_nsteps = nsteps
 		prev_interval = interval

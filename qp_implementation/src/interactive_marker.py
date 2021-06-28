@@ -74,7 +74,7 @@ def receive_position_cb(data):
 
     drone_obstacles.circles[index].center.x = data.pose.pose.position.x
     drone_obstacles.circles[index].center.y = data.pose.pose.position.y
-    drone_obstacles.circles[index].radius = 1
+    drone_obstacles.circles[index].radius = 0.5
     drone_obstacles.circles[index].velocity.x = data.twist.twist.linear.x
     drone_obstacles.circles[index].velocity.y = data.twist.twist.linear.y
 

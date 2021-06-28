@@ -22,8 +22,8 @@ from tf.transformations import euler_from_quaternion
 import numpy as np
 from numpy import array
 from qp_matrix import qp_q_dot_des_array
-# from MPC_obstacle_avoidance import MPC_solver
-from MPC_obstacle_avoidance_cvx import MPC_solver
+import MPC_obstacle_avoidance
+import MPC_obstacle_avoidance_cvx
 
 global R, args, uav_x_vel, uav_y_vel, main_thread, nsteps_slider, interval_slider
 
@@ -53,6 +53,7 @@ quat                                                = Quaternion()
 start_y                                             = 0.0
 timer                                               = 0.0
 cached_var                                          = {}
+cached_var_2                                          = {}
 x_obs = y_obs = r_obs                               = []
 vx_obs                                              = [0.0]
 vy_obs                                              = [0.0]
@@ -125,7 +126,8 @@ def other_drone_positions_cb(data):
     vy_obs = np.delete(np.array([obj.velocity.y for obj in data.circles]), index)
     r_obs = np.delete(np.array([obj.radius for obj in data.circles]), index)
 
-    obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
+    # obstacles = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
+    print(obstacles)
 
 def gps_local_cb(data):
     global x_current, y_current, z_current, x_home, y_home, x_home_recorded, discard_samples, x_destination, y_destination, start_y, pos
@@ -180,6 +182,7 @@ def calc_target_cb(data):
         y_destination = y_temp
     
     final_pose = [x_destination, y_destination, height]
+    # final_pose = [-2,-2,0]
     #print(final_pose)
 
 def twist_obj(x, y, z, a, b, c):
@@ -245,7 +248,7 @@ def _setpoint_position_callback(topic):
 
 def main():
     global x_home_recorded, z_home_recorded, args, max_time, min_time, total_time, counter, lin_vel_lim, prev_x, nsteps_slider, interval_slider
-    global limit_x, limit_y, limit_z, kp, kb, cont, gps_rate, n, t, timer, cached_var, obstacles, x_velocity_des, y_velocity_des, speed_slider, sleep_flag
+    global limit_x, limit_y, limit_z, kp, kb, cont, gps_rate, n, t, timer, cached_var, cached_var_2, obstacles, x_velocity_des, y_velocity_des, speed_slider, sleep_flag
 
     xAnt = yAnt = 0
     x_home_recorded = False
@@ -279,7 +282,7 @@ def main():
     pub2 = rospy.Publisher(args.namespace+'/gps_point', PointStamped, queue_size = 5)
     pub3 = rospy.Publisher('boundary_cube', Marker, queue_size = 1)
     pub4 = rospy.Publisher(args.namespace+'/path', Path, queue_size=1)
-    pub5 = rospy.Publisher(args.namespace+'/ekf_path', Path, queue_size=1)
+    pub5 = rospy.Publisher(args.namespace+'/mpc_2_path', Path, queue_size=1)
     pub6 = rospy.Publisher(args.namespace+'/mpc_path', Path, queue_size=1)
     pub7 = rospy.Publisher(args.namespace+'/current_pose', CircleObstacle, queue_size=3)
     pub8 = rospy.Publisher(args.namespace+'/predicted_path', Path, queue_size = 1)
@@ -323,8 +326,8 @@ def main():
         pub1.publish(setpoint_msg)
         rate.sleep()
     
-    set_arming(True)
-    set_mode(0, 'OFFBOARD')
+    # set_arming(True)
+    # set_mode(0, 'OFFBOARD')
     last_request = rospy.Time.now()
     
     main_thread = threading.currentThread()
@@ -333,9 +336,9 @@ def main():
     tf_listener = tf2_ros.TransformListener(tf_buff)
 
     while getattr(main_thread, "do_run", True) and not rospy.is_shutdown():        
-        n = int(nsteps_slider.value)
-        t = interval_slider.value 
-        lin_vel_lim = speed_slider.value
+        n = 15 #int(nsteps_slider.value)
+        t = 0.1 #interval_slider.value 
+        lin_vel_lim = 0.5 # speed_slider.value
         timer = time.time()
 
         # yaw = 360.0 + yaw if yaw < 0 else yaw
@@ -369,7 +372,16 @@ def main():
         timer = time.time()
 
         try:
-            x_velocity_des, y_velocity_des, cached_var = MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles)
+            _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles)
+            feasible_sol = cached_var_2.get("solution")
+            x_velocity_des, y_velocity_des, cached_var = MPC_obstacle_avoidance_cvx.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles, feasible_sol=feasible_sol)
+
+            obs_free_sol_1 = cached_var.get("obs_free_sol")
+            obs_free_sol_2 = cached_var_2.get("obs_free_sol")
+
+            # if(obs_free_sol_2 == obs_free_sol_1):
+            # print(obs_free_sol_2)
+            # print(obs_free_sol_1)
 
         except ValueError:
             x_velocity_des = 0
@@ -397,11 +409,11 @@ def main():
 
         #print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
         #print(current_time)
-        debug.value = str(avg_time)
-        debug2.value = str(current_time)
+        # debug.value = str(avg_time)
+        # debug2.value = str(current_time)
 
-        debug.display()
-        debug2.display()
+        # debug.display()
+        # debug2.display()
 
         x_array = cached_var.get("solution")[0:n+1]
         y_array = cached_var.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
@@ -409,6 +421,11 @@ def main():
         z_velocity_des = 0.5 * dz
         
         mpc_point_arr = np.transpose(np.row_stack((x_array, y_array)))
+
+        x_array_2 = cached_var_2.get("solution")[0:n+1]
+        y_array_2 = cached_var_2.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
+
+        mpc_point_arr_2 = np.transpose(np.row_stack((x_array_2, y_array_2)))
         
         theta = math.atan2(y_velocity_des, x_velocity_des)
         x_vel_limit = lin_vel_lim * math.cos(theta)
@@ -435,20 +452,20 @@ def main():
             gps_point.point.z = z_current# - z_home
             pub2.publish(gps_point)
 
-        boundary_cube = Marker()
-        boundary_cube.header.frame_id = 'map'
-        boundary_cube.header.stamp = rospy.Time.now()
-        boundary_cube.action = boundary_cube.ADD
-        boundary_cube.type = boundary_cube.CUBE
-        boundary_cube.id = 0
-        boundary_cube.scale.x = limit_x*2
-        boundary_cube.scale.y = limit_y*2
-        boundary_cube.scale.z = limit_z*2       
-        boundary_cube.color.a = 0.5 
-        boundary_cube.color.r = 0.4
-        boundary_cube.color.g = 0.2
-        boundary_cube.color.b = 0
-        pub3.publish(boundary_cube)
+        # boundary_cube = Marker()
+        # boundary_cube.header.frame_id = 'map'
+        # boundary_cube.header.stamp = rospy.Time.now()
+        # boundary_cube.action = boundary_cube.ADD
+        # boundary_cube.type = boundary_cube.CUBE
+        # boundary_cube.id = 0
+        # boundary_cube.scale.x = limit_x*2
+        # boundary_cube.scale.y = limit_y*2
+        # boundary_cube.scale.z = limit_z*2       
+        # boundary_cube.color.a = 0.5 
+        # boundary_cube.color.r = 0.4
+        # boundary_cube.color.g = 0.2
+        # boundary_cube.color.b = 0
+        # pub3.publish(boundary_cube)
 
         pose = PoseStamped()
         pose.header.frame_id = "map"
@@ -456,29 +473,40 @@ def main():
         pose.pose.position.y = pos.y
         pose.pose.position.z = pos.z
 
-        if True:
-            mpc_pose_array = [None] * n
-            for i in range(0, n):
-                mpc_pose = PoseStamped()
-                mpc_pose.header.seq = i
-                mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
-                mpc_pose.header.frame_id = args.namespace+"/base_link"
-                mpc_pose.pose.position.x = mpc_point_arr[i][0] + x_destination
-                mpc_pose.pose.position.y = mpc_point_arr[i][1] + y_destination
-                mpc_pose.pose.position.z = height
-                mpc_pose_array[i] = mpc_pose
+        mpc_pose_array = [None] * n
+        mpc_pose_array_2 = [None] * n
+
+        for i in range(0, n):
+            mpc_pose = PoseStamped()
+            mpc_pose.header.seq = i
+            mpc_pose.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
+            mpc_pose.header.frame_id = args.namespace+"/base_link"
+            mpc_pose.pose.position.x = mpc_point_arr[i][0] + x_destination
+            mpc_pose.pose.position.y = mpc_point_arr[i][1] + y_destination
+            mpc_pose.pose.position.z = height
+            mpc_pose_array[i] = mpc_pose
+
+            mpc_pose_2 = PoseStamped()
+            mpc_pose_2.header.seq = i
+            mpc_pose_2.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
+            mpc_pose_2.header.frame_id = args.namespace+"/base_link"
+            mpc_pose_2.pose.position.x = mpc_point_arr_2[i][0] + x_destination
+            mpc_pose_2.pose.position.y = mpc_point_arr_2[i][1] + y_destination
+            mpc_pose_2.pose.position.z = height
+            mpc_pose_array_2[i] = mpc_pose_2
+
 
         if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
-            pose.header.seq = path.header.seq + 1
-            path.header.frame_id = "map"
-            path.header.stamp = rospy.Time.now()
-            pose.header.stamp = path.header.stamp
-            path.poses.append(pose)
+            # pose.header.seq = path.header.seq + 1
+            # path.header.frame_id = "map"
+            # path.header.stamp = rospy.Time.now()
+            # pose.header.stamp = path.header.stamp
+            # path.poses.append(pose)
             # ekf_pose.header.seq = ekf_path.header.seq + 1
-            # ekf_path.header.frame_id = "map"
-            # ekf_path.header.stamp = rospy.Time.now()
+            ekf_path.header.frame_id = "map"
+            ekf_path.header.stamp = rospy.Time.now()
             # ekf_pose.header.stamp = ekf_path.header.stamp
-            # ekf_path.poses.append(ekf_pose)
+            ekf_path.poses = mpc_pose_array_2
             # mpc_pose.header.seq = ekf_path.header.seq + 1
             mpc_path.header.frame_id = "map"
             mpc_path.header.stamp = rospy.Time.now()
@@ -548,8 +576,8 @@ if __name__ == "__main__":
     
     index = int(args.namespace[3])
 
-    do_run = True
-    main_thread = threading.Thread(target = main)
-    app = App().run()
+    # do_run = True
+    # main_thread = threading.Thread(target = main)
+    # app = App().run()
 
-    #main()
+    main()

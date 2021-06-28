@@ -6,6 +6,7 @@ import numpy as np
 from scipy.linalg import block_diag
 from time import perf_counter
 import matplotlib.pyplot as plt
+import pdb
 
 prev_nsteps = 0
 prev_interval = 0
@@ -54,6 +55,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	y_vel_limit = kwargs.pop("y_vel_limit", 10000)
 	variables = kwargs.pop("variables", None)
 	obstacles = kwargs.pop("obstacles", None)
+	u_in = kwargs.pop("feasible_sol", None)
 
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = obstacles[0]
@@ -183,11 +185,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	obs_free_traj = u_in
 
-	gamma = 0.0001
+	gamma = 0.2
 
 	y_offset = 2 * nsteps + 1
-	x_prev_free = obs_free_traj[0:nsteps + 1]
-	y_prev_free = obs_free_traj[y_offset:y_offset + nsteps + 1]
+	# x_prev_free = obs_free_traj[0:nsteps + 1]
+	# y_prev_free = obs_free_traj[y_offset:y_offset + nsteps + 1]
 	# print("Obs free soln.\n",obs_free_traj)
 
 
@@ -222,7 +224,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		r_obs = np.add(r_obs, r_vehicle)
 		iterations = 0
 
-		while((d_norm >= 0.1) and (iterations < 1)):
+		while((d_norm >= 0.1) and (iterations < 6)):
 			iterations = iterations + 1
 			
 			x_prev = obs_free_traj[0:nsteps + 1]
@@ -288,9 +290,14 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 			prob.solve(verbose=False)
 
+			print(prob.objective.value)
+			# pdb.set_trace()
 			obs_free_traj = state_cont_pair.value
+			if(obs_free_traj is None):
+				print(prob.status)
+
 			# print("Solution:\t",state_cont_pair.value)
-			# d_norm = np.linalg.norm(obs_free_traj)
+
 			t3_stop = perf_counter()
 
 			# print("Solver time\t", t3_stop - t3_start)
@@ -326,7 +333,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	# plt.show()
 
 	if (nsteps != prev_nsteps or interval != prev_interval):
-		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": obs_traj, "prob": prob}
+		variables = {"big_A_eq": big_A_eq, "big_A_ineq": big_A_ineq, "big_H": big_H, "big_h": big_h, "prev_nsteps": prev_nsteps, "prev_interval": prev_interval, "solution": obs_traj, "prob": prob, "obs_free_sol": u_in}
 
 		prev_nsteps = nsteps
 		prev_interval = interval
