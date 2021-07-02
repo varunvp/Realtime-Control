@@ -30,7 +30,7 @@ import rospy, time
 
 from interactive_markers.interactive_marker_server import *
 from visualization_msgs.msg import *
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, PointStamped
 from qp_planner.msg import Obstacles, CircleObstacle
 from mavros_msgs.msg import HomePosition
 from nav_msgs.msg import Odometry
@@ -44,6 +44,8 @@ uav1_pub = rospy.Publisher("uav0/desired_pos", Point, queue_size=3)
 uav2_pub = rospy.Publisher("uav1/desired_pos", Point, queue_size=3)
 uav3_pub = rospy.Publisher("uav2/desired_pos", Point, queue_size=3)
 uav4_pub = rospy.Publisher("uav3/desired_pos", Point, queue_size=3)
+
+uav1_pos_pub = rospy.Publisher("/uav1/current_pos", PointStamped, queue_size=3)
 
 publish_drones_pos = rospy.Publisher('drones_state', Obstacles, queue_size = 10)
 
@@ -79,6 +81,16 @@ def receive_position_cb(data):
     drone_obstacles.circles[index].velocity.y = data.twist.twist.linear.y
 
     publish_drones_pos.publish(drone_obstacles)
+
+    if(index == 2):
+        point = PointStamped()
+        point.header.stamp = rospy.Time.now()
+        point.header.frame_id = "map"
+        point.point.x = data.pose.pose.position.x
+        point.point.y = data.pose.pose.position.y
+        point.point.z = 0
+
+        uav1_pos_pub.publish(point)
 
 if __name__=="__main__":
     # rospy.init_node('drone_stat_publisher')

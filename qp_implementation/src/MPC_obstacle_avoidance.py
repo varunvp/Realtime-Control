@@ -64,6 +64,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	y_vel_limit = kwargs.pop("y_vel_limit", 10000)
 	variables = kwargs.pop("variables", None)
 	obstacles = kwargs.pop("obstacles", None)
+	gamma = kwargs.pop("gamma", 0.2)
 
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = obstacles[0]
@@ -225,11 +226,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					h = r_obs[j] **2 - (x_in[i] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i] - (y_obs[j] - vy_obs[j] * prediction_time))**2
 					#h_prev = r**2 - x(i-1)**2 - y(i-1)**2
 					h_prev = r_obs[j] **2 - (x_in[i-1] - (x_obs[j] - vx_obs[j] * prediction_time))**2 - (y_in[i-1] - (y_obs[j] - vy_obs[j] * prediction_time))**2
-					gamma = 0.2
-
-					# dist = math.sqrt((x_in[i] - x_obs[j])**2 + (y_in[i] - y_obs[j])**2)
-					# x_proj[i] = x_obs[j] + r_obs[j] / dist * (x_in[i] - x_obs[j])
-					# y_proj[i] = y_obs[j] + r_obs[j] / dist * (y_in[i] - y_obs[j])
+					# gamma = 0.2
 
 					#Ai <= -2 * (x(i) - x_o)
 					barrier_cons_A[i][i+1] = -2 * (x_proj[i] - (x_obs[j] - vx_obs[j] * prediction_time))
