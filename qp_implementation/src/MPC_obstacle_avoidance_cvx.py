@@ -201,17 +201,17 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if(u_in is None):
 		u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
 
-	seed_traj = u_in.copy()
+	obs_free_traj = u_in
 
 	# gamma = 0.2
 
 	y_offset = 2 * nsteps + 1
-	x_prev_free = seed_traj[0:nsteps + 1] + x_destination
-	y_prev_free = seed_traj[y_offset:y_offset + nsteps + 1] + y_destination
+	x_prev_free = obs_free_traj[0:nsteps + 1] + x_destination
+	y_prev_free = obs_free_traj[y_offset:y_offset + nsteps + 1] + y_destination
 	# print("Obs free soln.\n",obs_free_traj)
 
 	tau_k = 1
-	tau_max = 1e7
+	tau_max = 1e5
 	mu = 4
 	delta_violation = 1e-5
 	iterations_max = 1000
@@ -240,8 +240,8 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		prob = cp.Problem(cp.Minimize(objective),
                  [ineq_lhs @ state_cont_pair <= ineq_rhs,eq_lhs @ state_cont_pair == eq_rhs])
 
-	x_prev = x_prev_free #.copy()
-	y_prev = y_prev_free #.copy()
+	x_prev = obs_free_traj[0:nsteps + 1]
+	y_prev = obs_free_traj[y_offset:y_offset + nsteps + 1]
 
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
@@ -281,6 +281,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				if(variables):
 					prob.parameters()[4+j*4+0].value = obs_motion
 					prob.parameters()[4+j*4+1].value = sq_norm_term
+					# print
 					prob.parameters()[4+j*4+2].value = sp_plus_1_minus_so
 					prob.parameters()[4+j*4+3].value = s_p_plus_1
 
@@ -292,23 +293,18 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 					sp_plus_1_minus_so_param.value = sp_plus_1_minus_so
 					s_p_plus_1_param.value = s_p_plus_1
 
-					# print("sp")
-					# print(sq_norm_term)
-					# print(sp_plus_1_minus_so_param.value)
-
 					s_k_minus_so = cp.reshape(s_k - so_param,(nsteps,2)) 
 
 					#LHS, gamma * ||s_{k+1} - s_obs||^2
 					LHS = gamma * cp.sum(cp.square(s_k_minus_so), axis = 1, keepdims=False)
 
-					#RHS, r^2 * (gamma - 1) + gamma * ||s_p_plus_1 - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
+					#RHS, r^2 * (gamma - 1) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
 					RHS = r_obs[j] ** 2 * (gamma - 1) + sq_norm_param - 2 * sp_plus_1_minus_so_param @ s_p_plus_1_param + 2 * sp_plus_1_minus_so_param @ s_k_plus_1
 
 					# print("LHS\n",LHS)
 					# print("RHS\n",RHS)
 
 					soc_constraints.append(LHS <= RHS + slack[j])
-					# pdb.set_trace()
 					# print("first sq_norm_term shape\t", sq_norm_param.value.shape)
 
 
@@ -334,7 +330,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				plt.plot(x_prev + x_destination,y_prev + y_destination,'bo-')
 
 
-				# x_prev, y_prev = project_to_obstacles(x_prev, y_prev, x_obs, y_obs, r_obs, nsteps)
+				x_prev, y_prev = project_to_obstacles(x_prev, y_prev, x_obs, y_obs, r_obs, nsteps)
 
 				plt.plot(x_prev + x_destination,y_prev+y_destination,'rx-')
 				# obs_free_traj = np.concatenate((obs_free_traj_x,obs_free_traj_y))
@@ -380,9 +376,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	t1_stop = perf_counter()
 	print("SOC MPC total time\t", t1_stop - t1_start)
 
+	obs_traj = obs_free_traj
+
 	if __name__ == "__main__":
-		# x_prev = obs_traj[0:nsteps + 1] + x_destination
-		# y_prev = obs_traj[y_offset:y_offset + nsteps + 1] + y_destination
+		x_prev = obs_traj[0:nsteps + 1] + x_destination
+		y_prev = obs_traj[y_offset:y_offset + nsteps + 1] + y_destination
 
 		plt.xlim(-4,4)
 		# plt.ylim(-15,5)
