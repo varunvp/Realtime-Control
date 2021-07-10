@@ -1,8 +1,9 @@
 #!/usr/bin/python
-import qp_matrix, time, math
+import qp_matrix, time, math, copy
 from numpy import array
 import numpy as np
 from scipy.linalg import block_diag
+from time import perf_counter
 
 prev_nsteps = 0
 prev_interval = 0
@@ -90,6 +91,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	timer = time.time()
 
+	t1_start = perf_counter()
 	if nsteps != prev_nsteps:
 		big_I = np.eye(2*nsteps + 1)
 		big_I[nsteps][nsteps] = 1000
@@ -183,8 +185,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 	#Obstacle free path
 	u_in = qp_matrix.quadprog_solve_qp(big_H, big_h, big_A_ineq, big_B_ineq, big_A_eq, big_B_eq)
-	# print(u_in)
-	traj = u_in
+	t1_stop = perf_counter()
+	print("Obs free time\t", t1_stop - t1_start)
+	traj = copy.deepcopy(u_in)
+
+	total_time = 0.
+
 	#Successive convexification for obstacle avoidance
 	if obstacles != None and len(obstacles) != 0:
 		x_obs = -np.subtract(x_destination, x_obs)
@@ -247,11 +253,15 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				B_ineq_d = np.concatenate((B_ineq_d, barrier_cons_B))
 				
 			# print(np.shape(A_ineq_d))
+			t2_start = perf_counter()
 			d_traj_out = qp_matrix.quadprog_solve_qp(big_H, big_h, A_ineq_d, B_ineq_d, A_eq_d, b_eq_d)
+			t2_stop = perf_counter()
+			# print("Init MPC time\t", t2_stop - t2_start)
+			total_time += t2_stop - t2_start
 			traj += d_traj_out
 			d = np.linalg.norm(d_traj_out)
 
-	# print(iterations, d)
+	print(iterations, total_time)
 	# print big_H
 	# print big_h
 	# print A_ineq_d

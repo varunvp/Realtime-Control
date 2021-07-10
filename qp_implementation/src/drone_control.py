@@ -161,8 +161,8 @@ def calc_target_cb(data):
         x_destination = x_temp
         y_destination = y_temp
     
-    # x_destination = -2
-    # y_destination = 5
+    x_destination = -0.5
+    y_destination = 6
     final_pose = [x_destination, y_destination, height]
     # final_pose = [-2,-2,0]
     print(final_pose)
@@ -317,7 +317,7 @@ def main():
     tf_buff = tf2_ros.Buffer()
     tf_listener = tf2_ros.TransformListener(tf_buff)
 
-    while getattr(main_thread, "do_run", True) and not rospy.is_shutdown():        
+    while getattr(main_thread, "do_run", True) and not rospy.is_shutdown() and counter < 500:        
         n = 15 #int(nsteps_slider.value)
         t = 0.1 #interval_slider.value 
         lin_vel_lim = 0.5 # speed_slider.value
@@ -344,12 +344,16 @@ def main():
         # obstacles = [[0],[5],[0.5],[0],[0]]
 
         timer = time.time()
+        feasible_sol = None
 
         _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles, gamma=0.2)
         feasible_sol = cached_var_2.get("solution")
 
-        x_array_2 = cached_var_2.get("solution")[0:n+1]
-        y_array_2 = cached_var_2.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
+        x_array_2 = cached_var_2.get("solution")[0:n+2]
+        y_array_2 = cached_var_2.get("solution")[2 * n + 1:2 * n + 1 + n + 2]
+
+        # x_array_2 = cached_var_2.get("obs_free_sol")[0:n+2]
+        # y_array_2 = cached_var_2.get("obs_free_sol")[2 * n + 1:2 * n + 1 + n + 2]
 
         mpc_point_arr_2 = np.transpose(np.row_stack((x_array_2, y_array_2)))
 
@@ -408,8 +412,8 @@ def main():
         counter = counter + 1
         avg_time = total_time / counter
 
-        # print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
-        # print(current_time)
+        print("Average time = %f \t Max time = %f \t Min time = %f" % (avg_time, max_time, min_time))
+        print(current_time)
         # debug.value = str(avg_time)
         # debug2.value = str(current_time)
 
@@ -435,12 +439,12 @@ def main():
         pub1.publish(twist_obj(x_velocity_des, y_velocity_des, z_velocity_des, 0.0, 0.0, 0.0))
         
 
-        # desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
-        # desired_point.header.frame_id = 'base_link'
-        # desired_point.point.x = p.point.x# - x_home
-        # desired_point.point.y = p.point.y# - y_home
-        # desired_point.point.z = 0
-        # pub.publish(desired_point)
+        desired_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
+        desired_point.header.frame_id = 'map'
+        desired_point.point.x = final_pose[0]# - x_home
+        desired_point.point.y = final_pose[1]# - y_home
+        desired_point.point.z = 0
+        pub.publish(desired_point)
 
         if len(obstacles) > 0 and len(obstacles[0]) > 0:
             gps_point = PointStamped(header=Header(stamp=rospy.get_rostime()))
@@ -482,15 +486,6 @@ def main():
             mpc_pose.pose.position.y = mpc_point_arr[i][1] + y_destination
             mpc_pose.pose.position.z = height
             mpc_pose_array[i] = mpc_pose
-
-            mpc_pose_2 = PoseStamped()
-            mpc_pose_2.header.seq = i
-            mpc_pose_2.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
-            mpc_pose_2.header.frame_id = args.namespace+"/base_link"
-            mpc_pose_2.pose.position.x = mpc_point_arr_2[i][0] + x_destination
-            mpc_pose_2.pose.position.y = mpc_point_arr_2[i][1] + y_destination
-            mpc_pose_2.pose.position.z = height
-            mpc_pose_array_2[i] = mpc_pose_2
 
 
         if (xAnt != pose.pose.position.x and yAnt != pose.pose.position.y):
