@@ -2,10 +2,11 @@
 
 from __future__ import print_function
 
-import os, sys, select, tty, rospy, mavros, threading, time, signal, select, tf, math, quadprog, qp_matrix, argparse, tf2_ros, npyscreen
+import rospy, mavros, threading, time, tf, math, argparse, tf2_ros, npyscreen
 
 from mavros import command, setpoint
 
+import matplotlib.pyplot as plt
 from std_msgs.msg import Header, Float32, Float64, Empty
 import tf2_geometry_msgs
 from geometry_msgs.msg import PoseStamped, TwistStamped, Vector3, Quaternion, Point, Twist, PointStamped, TransformStamped
@@ -21,7 +22,6 @@ from qp_planner.msg import Obstacles, CircleObstacle
 from tf.transformations import euler_from_quaternion
 import numpy as np
 from numpy import array
-from qp_matrix import qp_q_dot_des_array
 import MPC_obstacle_avoidance
 import MPC_obstacle_avoidance_cvx
 
@@ -73,6 +73,8 @@ max_time                                            = 0.
 min_time                                            = 1000.
 total_time                                          = 0.
 sleep_flag                                          = False
+gamma                                               = .0001
+h_plot_1, h_plot_2, t_plot                          = [], [], []
 
 class form_object(npyscreen.Form):
     def create(self):
@@ -161,7 +163,7 @@ def calc_target_cb(data):
         x_destination = x_temp
         y_destination = y_temp
     
-    x_destination = -0.5
+    x_destination = 0
     y_destination = 6
     final_pose = [x_destination, y_destination, height]
     # final_pose = [-2,-2,0]
@@ -340,13 +342,13 @@ def main():
         dx = x_current #-p.point.x
         dy = y_current #-p.point.y
         dz = z_destination - z_current
-        current_pose = [dx, dy, dz]
+        current_pose = [dx, dy, 10]
         # obstacles = [[0],[5],[0.5],[0],[0]]
 
         timer = time.time()
         feasible_sol = None
 
-        _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles, gamma=0.2)
+        _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles, gamma=gamma)
         feasible_sol = cached_var_2.get("solution")
 
         x_array_2 = cached_var_2.get("solution")[0:n+2]
@@ -375,7 +377,7 @@ def main():
 
         pub5.publish(ekf_path)
 
-        x_velocity_des, y_velocity_des, cached_var = MPC_obstacle_avoidance_cvx.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y,nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles, feasible_sol=feasible_sol, gamma=0.2)
+        x_velocity_des, y_velocity_des, cached_var = MPC_obstacle_avoidance_cvx.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y,nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles, feasible_sol=feasible_sol, gamma=gamma)
 
             # print("current_pose\t", current_pose)
             # print("final_pose\t", final_pose)
@@ -539,8 +541,26 @@ def main():
             path.poses.pop(0)
             ekf_path.poses.pop(0)
 
-        # x_obs = []
+        if(args.plot):
+            t_plot.append(total_time)
+            
+            obs_1 = np.array([obstacles[0][0], obstacles[1][0], 10])
+            dist_1 = np.linalg.norm(np.array(current_pose) - obs_1)
+            h_1 = dist_1 ** 2 - obstacles[2][0] ** 2
+            h_plot_1.append(h_1)
 
+            obs_2 = np.array([obstacles[0][1], obstacles[1][1], 10])
+            dist_2 = np.linalg.norm(np.array(current_pose) - obs_2)
+            h_2 = dist_2 ** 2 - obstacles[2][1] ** 2
+            h_plot_2.append(h_2)
+
+        if(abs(final_pose[1] - current_pose[1]) < 0.01):
+            plt.plot(t_plot, h_plot_1)
+            plt.plot(t_plot, h_plot_2)
+            plt.grid()
+            plt.show()
+
+            break
         
 if __name__ == "__main__":
     global main_thread, index
@@ -548,6 +568,7 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--namespace", default="", help="Specify namespace for individual drone")
     parser.add_argument("-o", "--other_namespace", default="", help="Specify namespace of other drone")
     parser.add_argument("-i", "--individual", action="store_true")
+    parser.add_argument("-p", "--plot", action="store_true")
     args = parser.parse_args()
 
     rospy.init_node(args.namespace+'controller')

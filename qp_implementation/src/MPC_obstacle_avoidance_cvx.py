@@ -104,7 +104,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 		# [0 0 1000 0]				Relaxation for x_k, k = N
 		# [0 0 0    1]
 		big_I = np.eye(2*nsteps + 1)
-		big_I[nsteps][nsteps] = 1000
+		big_I[nsteps][nsteps] = 10
 		# [0 0 0].T
 		big_0 = np.zeros(2*nsteps + 1)
 
@@ -219,11 +219,12 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	if(variables):
 		prob = variables.get("prob")
 		state_cont_pair = prob.variables()[0]
+		slack = prob.variables()[1]
 
-		prob.parameters()[0].value = big_A_ineq
-		prob.parameters()[1].value = big_B_ineq
-		prob.parameters()[2].value = big_A_eq
-		prob.parameters()[3].value = big_B_eq
+		prob.parameters()[1].value = big_A_ineq
+		prob.parameters()[2].value = big_B_ineq
+		prob.parameters()[3].value = big_A_eq
+		prob.parameters()[4].value = big_B_eq
 
 	else:
 		state_cont_pair = cp.Variable(4*nsteps + 2)
@@ -279,11 +280,10 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				sp_plus_1_minus_so = np.column_stack((np.diag(x_prev[1:] - x_obs_motion), np.diag(y_prev[1:] - y_obs_motion)))
 
 				if(variables):
-					prob.parameters()[4+j*4+0].value = obs_motion
-					prob.parameters()[4+j*4+1].value = sq_norm_term
-					# print
-					prob.parameters()[4+j*4+2].value = sp_plus_1_minus_so
-					prob.parameters()[4+j*4+3].value = s_p_plus_1
+					prob.parameters()[5+j*4+0].value = obs_motion
+					prob.parameters()[5+j*4+1].value = sq_norm_term
+					prob.parameters()[5+j*4+2].value = sp_plus_1_minus_so
+					prob.parameters()[5+j*4+3].value = s_p_plus_1
 
 				else:
 					sq_norm_param, sp_plus_1_minus_so_param, s_p_plus_1_param, so_param = cp.Parameter(sq_norm_term.shape), cp.Parameter(sp_plus_1_minus_so.shape), cp.Parameter(s_p_plus_1.shape), cp.Parameter(obs_motion.shape)
@@ -295,7 +295,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 
 					s_k_minus_so = cp.reshape(s_k - so_param,(nsteps,2)) 
 
-					#LHS, gamma * ||s_{k+1} - s_obs||^2
+					#LHS, gamma * ||s_k - s_obs||^2
 					LHS = gamma * cp.sum(cp.square(s_k_minus_so), axis = 1, keepdims=False)
 
 					#RHS, r^2 * (gamma - 1) + gamma * ||s_p - s_o||^2 - 2 * gamma * (sp - so).T * sp + 2 * gamma * (sp - so).T * sk
@@ -317,7 +317,13 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 			# print("Solution:\t",state_cont_pair.value)
 			# print("Status:\t", prob.status)
 			tau_k = np.min([mu * tau_k, tau_max])
-			tau.value = [tau_k]
+
+			if(variables):
+				prob.parameters()[0].value = [tau_k]
+
+			else:
+				tau.value = [tau_k]
+
 			prob.solve(verbose=False)
 
 			if(prob.status in [cp.OPTIMAL,cp.OPTIMAL_INACCURATE]):
@@ -327,12 +333,11 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 				x_prev = obs_free_traj[0:nsteps + 1]
 				y_prev = obs_free_traj[y_offset:y_offset + nsteps + 1]
 
-				plt.plot(x_prev + x_destination,y_prev + y_destination,'bo-')
+				# plt.plot(x_prev + x_destination,y_prev + y_destination,'bo-')
 
+				# x_prev, y_prev = project_to_obstacles(x_prev, y_prev, x_obs, y_obs, r_obs, nsteps)
 
-				x_prev, y_prev = project_to_obstacles(x_prev, y_prev, x_obs, y_obs, r_obs, nsteps)
-
-				plt.plot(x_prev + x_destination,y_prev+y_destination,'rx-')
+				# plt.plot(x_prev + x_destination,y_prev+y_destination,'rx-')
 				# obs_free_traj = np.concatenate((obs_free_traj_x,obs_free_traj_y))
 
 
@@ -422,18 +427,19 @@ if __name__ == "__main__":
 	
 	update_var = {}
 	update_var_2 = {}
-	gamma = .2
+	gamma = .0001
 	# obs = [[2.5,5],[0.1,-0.1],[1,1],[0,0],[0,0]]
 	obs = [[0],[4],[0.5],[0],[0]]
 	init_soln = None
-	final_pos = [-0.5,6,0]
+	final_pos = [-0.5,3,0]
+	current_pose = [0,0,0]
 
 	all_mpc_time_start = perf_counter()
 	# Obstacles array format = [x_obs, y_obs, r_obs, vx_obs, vy_obs]
-	# _, _, update_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose=[0,0,0],current_pose=[0,0,0],final_pose=final_pos, x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1, obstacles = obs, gamma=gamma, r_vehicle = 0.5, variables=update_var)
-	# init_soln = update_var_2.get("solution")
+	_, _, update_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose=[0,0,0],current_pose=current_pose,final_pose=final_pos, x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1, obstacles = obs, gamma=gamma, r_vehicle = 0.5, variables=update_var)
+	init_soln = update_var_2.get("solution")
 
-	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=[0,0,0],final_pose=final_pos, x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=update_var, obstacles = obs, gamma=gamma, feasible_sol=init_soln, r_vehicle = 0.5)
+	lin_u, ang_u, update_var = MPC_solver(init_pose=[0,0,0],current_pose=current_pose,final_pose=final_pos, x_limit = 100000, y_limit = 100000, nsteps=15, interval = 0.1,variables=update_var, obstacles = obs, gamma=gamma, feasible_sol=init_soln, r_vehicle = 0.5)
 	all_mpc_time_stop = perf_counter()
 
 	print("Total time\t", all_mpc_time_stop - all_mpc_time_start)

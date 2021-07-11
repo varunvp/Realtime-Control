@@ -94,7 +94,7 @@ def MPC_solver(init_pose, current_pose, final_pose, x_limit=1000, y_limit = 1000
 	t1_start = perf_counter()
 	if nsteps != prev_nsteps:
 		big_I = np.eye(2*nsteps + 1)
-		big_I[nsteps][nsteps] = 1000
+		big_I[nsteps][nsteps] = 10
 		# [0 0 0].T
 		big_0 = np.zeros(2*nsteps + 1)
 	
