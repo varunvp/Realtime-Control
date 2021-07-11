@@ -19,13 +19,13 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
         cvxpy_args={'solver': 'ECOS'}): #, randomize_initial_trajectory=True):
     obstacles = process_obstacle_list(obstacles)
     # Dynamics --  x_{t+1} = x_t + u_t * sampling_time
-    SAMPLING_TIME = 0.1
+    SAMPLING_TIME = 0.5
     point_mass_A = np.eye(2)
     point_mass_B = np.eye(2) * SAMPLING_TIME
 
     # Limits
-    MIN_VELOCITY = -1
-    MAX_VELOCITY = 1
+    MIN_VELOCITY = -0.5
+    MAX_VELOCITY = 0.5
     MIN_X = -10
     MIN_Y = -10
     MAX_X = 10
@@ -68,9 +68,9 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
         # if randomize_initial_trajectory:
         #     states_colwise_prev += np.random.uniform(low=-1, high=1,
         #         size=(2, n_steps + 1))
-        plt.plot(states_colwise_prev[0, :], states_colwise_prev[1, :], 'rx-')
-        plt.draw()
-        plt.pause(1)
+        # plt.plot(states_colwise_prev[0, :], states_colwise_prev[1, :], 'rx-')
+        # plt.draw()
+        # plt.pause(1)
     else:
         raise RuntimeError("CVPXY didn't solve the obstacle ignoring "
                            "trajectory. Terminated with status: "
@@ -111,10 +111,10 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
 
     tau_k = 1
     TAU_MAX = 1e5
-    MU = 3
+    MU = 5
     ITERATIONS_MAX = 1000
     DELTA_VIOLATION = 1e-5
-
+    COST_TOLERANCE = 1e1
     # SUCCESSIVE CONVEXIFICATION --- EXECUTION
     not_converged = True
     prev_obj_value = np.inf
@@ -171,10 +171,10 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
                                                 cp.OPTIMAL_INACCURATE]:
             # Update the trajectory
             states_colwise_prev = states_colwise.value
-            plt.plot(states_colwise_prev[0, :], states_colwise_prev[1, :],
-                'b*-')
-            plt.draw()
-            plt.pause(1)
+            # plt.plot(states_colwise_prev[0, :], states_colwise_prev[1, :],
+            #     'b*-')
+            # plt.draw()
+            # plt.pause(1)
         else:
             raise RuntimeError("CVPXY didn't solve in the successive "
                                f"convexification. Terminated with status: "
@@ -188,7 +188,7 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
         print(f'Tau {tau_k:1.2f}')
         print(f'Sum slack {sum_slack:1.2f}')
         print("Diff\t", cost_difference)
-        if np.abs(cost_difference) < 1e-4 and sum_slack <= DELTA_VIOLATION:
+        if np.abs(cost_difference) < COST_TOLERANCE and sum_slack <= DELTA_VIOLATION:
             not_converged = False
 
         # Prepare for the next iteration
@@ -200,7 +200,7 @@ def MPC_solver(init_pose, final_pose, n_steps=10, gamma=0.2, obstacles=None,
             print('Breaking because iteration limit reached')
             break
 
-    return inputs_colwise.value[0, :], inputs_colwise.value[1, :], \
+    return inputs_colwise.value[0, 0], inputs_colwise.value[1, 0], \
            states_colwise_prev[0, :], states_colwise_prev[1, :],
 
 
@@ -219,8 +219,9 @@ if __name__ == "__main__":
     plt.ylim([-1, 8])
     plt.draw()
     plt.pause(0.1)
-    _, _, x_prev, y_prev = MPC_solver([0, 0, 0], final_pose,
+    vx, vy, x_prev, y_prev = MPC_solver([0, 0, 0], final_pose,
         n_steps=60, gamma=0.2, obstacles=obstacle_list,
         cvxpy_args={'solver':'ECOS'})
+    print(vx,vy)
     plt.plot(x_prev, y_prev, 'b+-')
     plt.show()

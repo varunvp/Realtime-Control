@@ -22,8 +22,9 @@ from qp_planner.msg import Obstacles, CircleObstacle
 from tf.transformations import euler_from_quaternion
 import numpy as np
 from numpy import array
-import MPC_obstacle_avoidance
-import MPC_obstacle_avoidance_cvx
+# import MPC_obstacle_avoidance
+# import MPC_obstacle_avoidance_cvx
+import MPC_obstacle_avoidance_cvx_refactor
 
 global R, args, uav_x_vel, uav_y_vel, main_thread, nsteps_slider, interval_slider
 
@@ -239,7 +240,7 @@ def main():
     
     path = Path() 
 
-    rate = rospy.Rate(10.0)
+    rate = rospy.Rate(2.0)
     
     # rospy.Subscriber("/mavros/global_position/global", NavSatFix, gps_global_cb)
     if(gps_rate == 0):
@@ -348,37 +349,39 @@ def main():
         timer = time.time()
         feasible_sol = None
 
-        _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles, gamma=gamma)
-        feasible_sol = cached_var_2.get("solution")
+        # _, _, cached_var_2 = MPC_obstacle_avoidance.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y, nsteps=n, interval=t, variables=cached_var_2, r_vehicle=r_vehicle, obstacles=obstacles, gamma=gamma)
+        # feasible_sol = cached_var_2.get("solution")
 
-        x_array_2 = cached_var_2.get("solution")[0:n+2]
-        y_array_2 = cached_var_2.get("solution")[2 * n + 1:2 * n + 1 + n + 2]
+        # x_array_2 = cached_var_2.get("solution")[0:n+2]
+        # y_array_2 = cached_var_2.get("solution")[2 * n + 1:2 * n + 1 + n + 2]
 
-        # x_array_2 = cached_var_2.get("obs_free_sol")[0:n+2]
-        # y_array_2 = cached_var_2.get("obs_free_sol")[2 * n + 1:2 * n + 1 + n + 2]
+        # # x_array_2 = cached_var_2.get("obs_free_sol")[0:n+2]
+        # # y_array_2 = cached_var_2.get("obs_free_sol")[2 * n + 1:2 * n + 1 + n + 2]
 
-        mpc_point_arr_2 = np.transpose(np.row_stack((x_array_2, y_array_2)))
+        # mpc_point_arr_2 = np.transpose(np.row_stack((x_array_2, y_array_2)))
 
-        mpc_pose_array_2 = [None] * n
+        # mpc_pose_array_2 = [None] * n
 
-        for i in range(0, n):
-            mpc_pose_2 = PoseStamped()
-            mpc_pose_2.header.seq = i
-            mpc_pose_2.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
-            mpc_pose_2.header.frame_id = args.namespace+"/base_link"
-            mpc_pose_2.pose.position.x = mpc_point_arr_2[i][0] + x_destination
-            mpc_pose_2.pose.position.y = mpc_point_arr_2[i][1] + y_destination
-            mpc_pose_2.pose.position.z = height
-            mpc_pose_array_2[i] = mpc_pose_2
+        # for i in range(0, n):
+        #     mpc_pose_2 = PoseStamped()
+        #     mpc_pose_2.header.seq = i
+        #     mpc_pose_2.header.stamp = rospy.Time.now() + rospy.Duration(t * 1)
+        #     mpc_pose_2.header.frame_id = args.namespace+"/base_link"
+        #     mpc_pose_2.pose.position.x = mpc_point_arr_2[i][0] + x_destination
+        #     mpc_pose_2.pose.position.y = mpc_point_arr_2[i][1] + y_destination
+        #     mpc_pose_2.pose.position.z = height
+        #     mpc_pose_array_2[i] = mpc_pose_2
 
-        ekf_path.header.frame_id = "map"
-        ekf_path.header.stamp = rospy.Time.now()
-        ekf_path.poses = mpc_pose_array_2
+        # ekf_path.header.frame_id = "map"
+        # ekf_path.header.stamp = rospy.Time.now()
+        # ekf_path.poses = mpc_pose_array_2
 
-        pub5.publish(ekf_path)
+        # pub5.publish(ekf_path)
+        init_pose = current_pose
+        x_velocity_des, y_velocity_des, x_array, y_array = MPC_obstacle_avoidance_cvx_refactor.MPC_solver(init_pose, final_pose, n_steps=n, obstacles=obstacles, gamma=gamma)
 
-        x_velocity_des, y_velocity_des, cached_var = MPC_obstacle_avoidance_cvx.MPC_solver(init_pose, current_pose, final_pose, x_limit = limit_x, y_limit = limit_y,nsteps=n, interval=t, variables=cached_var, r_vehicle=r_vehicle, obstacles=obstacles, feasible_sol=feasible_sol, gamma=gamma)
-
+        x_array -= x_destination
+        y_array -= y_destination
             # print("current_pose\t", current_pose)
             # print("final_pose\t", final_pose)
             # print("obstacles\t", obstacles)
@@ -422,8 +425,8 @@ def main():
         # debug.display()
         # debug2.display()
 
-        x_array = cached_var.get("solution")[0:n+1]
-        y_array = cached_var.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
+        # x_array = cached_var.get("solution")[0:n+1]
+        # y_array = cached_var.get("solution")[2 * n + 1:2 * n + 1 + n + 1]
 
         z_velocity_des = 0.5 * dz
         
@@ -431,12 +434,12 @@ def main():
 
        
         
-        theta = math.atan2(y_velocity_des, x_velocity_des)
-        x_vel_limit = lin_vel_lim * math.cos(theta)
-        y_vel_limit = lin_vel_lim * math.sin(theta)
+        # theta = math.atan2(y_velocity_des, x_velocity_des)
+        # x_vel_limit = lin_vel_lim * math.cos(theta)
+        # y_vel_limit = lin_vel_lim * math.sin(theta)
 
-        x_velocity_des = x_velocity_des if math.fabs(x_velocity_des) < x_vel_limit else x_vel_limit# * math.copysign(1, x_velocity_des)
-        y_velocity_des = y_velocity_des if math.fabs(y_velocity_des) < y_vel_limit else y_vel_limit# * math.copysign(1, y_velocity_des)
+        # x_velocity_des = x_velocity_des if math.fabs(x_velocity_des) < x_vel_limit else x_vel_limit# * math.copysign(1, x_velocity_des)
+        # y_velocity_des = y_velocity_des if math.fabs(y_velocity_des) < y_vel_limit else y_vel_limit# * math.copysign(1, y_velocity_des)
 
         pub1.publish(twist_obj(x_velocity_des, y_velocity_des, z_velocity_des, 0.0, 0.0, 0.0))
         
